@@ -143,11 +143,71 @@ fprintf('  Errore finale massimo|e|: %.2f°C\n', max(abs(e_finals)));
 
 fprintf('\n=== FASE 3: Grafici ===\n');
 
-draw_case3_results(latent, realCost, ...
-                   latent_single, realCost_single, ...
-                   stair_latent, stair_realCost, stair_actions, ...
-                   plant, cost, J, N, ...
-                   Tset_train, Tset_stair_eval, H_step_eval, Q2_eval);
+% --- Vecchio draw (storico training + scalinata) ---
+% draw_case3_results(latent, realCost, ...
+%                    latent_single, realCost_single, ...
+%                    stair_latent, stair_realCost, stair_actions, ...
+%                    plant, cost, J, N, ...
+%                    Tset_train, Tset_stair_eval, H_step_eval, Q2_eval);
+
+% --- Nuovo draw_case3_step: stitching della scalinata eval ---
+nSteps_c3 = length(Tset_stair_eval);
+T1_full_c3 = []; ref_full_c3 = []; Q1_full_c3 = [];
+Q2_full_c3 = []; cost_full_c3 = []; err_full_c3 = [];
+t_full_c3 = [];
+step_times_c3 = [];
+t_offset_c3 = 0;
+
+for s = 1:nSteps_c3
+    lt_s  = stair_latent{s};
+    n_s   = size(lt_s, 1);                           % H_step_eval+1 punti
+    e_s   = lt_s(:, 1);                              % errore
+    Ts_s  = lt_s(1, 3);                              % Tset del gradino
+    T1_s  = e_s + Ts_s;                              % T1 = e + Tset
+    t_s   = (0:n_s-1)' * dt + t_offset_c3;           % [s]
+    ref_s = Ts_s * ones(n_s, 1);                      % riferimento = Tset
+    err_s = e_s;                                      % errore = T1 - Tset
+
+    % Q1
+    if ~isempty(stair_actions{s})
+        q1_s = stair_actions{s}(:);                   % H_step_eval × 1 [%]
+        q1_s = [q1_s(1); q1_s];                       % allinea a (H+1)
+    else
+        q1_s = NaN(n_s, 1);
+    end
+
+    % Q2 costante
+    Q2_s = Q2_eval * ones(n_s, 1);
+
+    % Costo
+    rc_s = stair_realCost{s}(:);
+    cost_s = [rc_s(1); rc_s];
+
+    step_times_c3(end+1) = t_offset_c3;              %#ok — inizio gradino [s]
+
+    if s == 1
+        T1_full_c3   = T1_s;    ref_full_c3  = ref_s;
+        Q1_full_c3   = q1_s;    Q2_full_c3   = Q2_s;
+        cost_full_c3 = cost_s;  err_full_c3  = err_s;
+        t_full_c3    = t_s;
+    else
+        T1_full_c3   = [T1_full_c3;   T1_s(2:end)];
+        ref_full_c3  = [ref_full_c3;  ref_s(2:end)];
+        Q1_full_c3   = [Q1_full_c3;   q1_s(2:end)];
+        Q2_full_c3   = [Q2_full_c3;   Q2_s(2:end)];
+        cost_full_c3 = [cost_full_c3; cost_s(2:end)];
+        err_full_c3  = [err_full_c3;  err_s(2:end)];
+        t_full_c3    = [t_full_c3;    t_s(2:end)];
+    end
+    t_offset_c3 = t_offset_c3 + (n_s - 1) * dt;
+end
+
+Q2_min_c3 = 2;  Q2_max_c3 = 5;                       % range Q2 [%]
+Tamb_c3   = 25;                                       % Tamb fissa [°C]
+
+draw_case3_step(t_full_c3, T1_full_c3, ref_full_c3, Q1_full_c3, Q2_full_c3, ...
+                cost_full_c3, err_full_c3, dt, step_times_c3, ...
+                Tset_stair_eval, Tamb_c3, Q2_min_c3, Q2_max_c3, policy.maxU);
 
 % Salva figure con findobj (robusto, non dipende dall'handle numerico grezzo)
 fig_save = {13, 'case3_training'; 14, 'case3_staircase_eval'};

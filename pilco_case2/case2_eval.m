@@ -103,10 +103,62 @@ fprintf('%s\n', repmat('-',1,65));
 
 fprintf('\n=== FASE 3: Generazione grafici ===\n');
 
-draw_case2_results(latent, realCost, latent_eval, realCost_eval, ...
-                   plant, cost, J, N, Tamb_train, Tamb_eval);
+% --- Vecchio draw (storico training + eval) ---
+% draw_case2_results(latent, realCost, latent_eval, realCost_eval, ...
+%                    plant, cost, J, N, Tamb_train, Tamb_eval);
 
-% Salva Figure 11 (training) e Figure 12 (valutazione)
+% --- Nuovo draw_case2: stitching dei rollout eval in una traiettoria continua ---
+T1_full_c2 = []; T2_full_c2 = []; Q1_full_c2 = [];
+ref_full_c2 = []; cost_full_c2 = []; err_full_c2 = [];
+Q2_full_c2 = []; t_full_c2 = [];
+seg_switch_t_c2 = [];
+Tset_seg_c2 = cost.target(1) * ones(1, nT_eval);   % Tset fisso 50°C per tutti
+t_offset_c2 = 0;
+
+for te = 1:nT_eval
+    lt_te = latent_eval{te};
+    n_te  = size(lt_te, 1);                          % H+1 punti
+    T1_te = lt_te(:, 1);
+    T2_te = lt_te(:, 2);
+    t_te  = (0:n_te-1)' * dt + t_offset_c2;         % [s]
+    ref_te = cost.target(1) * ones(n_te, 1);
+    err_te = T1_te - ref_te;
+
+    rc_te = realCost_eval{te}(:);
+    cost_te = [rc_te(1); rc_te];                     % allinea a (H+1)
+
+    % Q1: non disponibile direttamente, usa placeholder NaN
+    Q1_te = NaN(n_te, 1);
+
+    % Q2: nel Caso 2 non c'è disturbo Q2 esplicito nello stato per eval
+    Q2_te = zeros(n_te, 1);
+
+    if te == 1
+        T1_full_c2   = T1_te;   T2_full_c2   = T2_te;
+        ref_full_c2  = ref_te;  err_full_c2  = err_te;
+        cost_full_c2 = cost_te; Q1_full_c2   = Q1_te;
+        Q2_full_c2   = Q2_te;   t_full_c2    = t_te;
+    else
+        seg_switch_t_c2(end+1) = t_offset_c2;        %#ok — tempo di switch [s]
+        T1_full_c2   = [T1_full_c2;   T1_te(2:end)];
+        T2_full_c2   = [T2_full_c2;   T2_te(2:end)];
+        ref_full_c2  = [ref_full_c2;  ref_te(2:end)];
+        err_full_c2  = [err_full_c2;  err_te(2:end)];
+        cost_full_c2 = [cost_full_c2; cost_te(2:end)];
+        Q1_full_c2   = [Q1_full_c2;   Q1_te(2:end)];
+        Q2_full_c2   = [Q2_full_c2;   Q2_te(2:end)];
+        t_full_c2    = [t_full_c2;    t_te(2:end)];
+    end
+    t_offset_c2 = t_offset_c2 + (n_te - 1) * dt;
+end
+
+Q2_min_c2 = 0;  Q2_max_c2 = 0;
+
+draw_case2(t_full_c2, T1_full_c2, T2_full_c2, ref_full_c2, ...
+           Q1_full_c2, Q2_full_c2, cost_full_c2, err_full_c2, ...
+           dt, Tamb_eval, Tset_seg_c2, seg_switch_t_c2, Q2_min_c2, Q2_max_c2);
+
+% Salva Figure
 fig_names = {11, 'case2_training'; 12, 'case2_evaluation'};
 
 for fi = 1:size(fig_names, 1)

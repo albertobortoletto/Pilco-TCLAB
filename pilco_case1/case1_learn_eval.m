@@ -90,8 +90,39 @@ end
 
 fprintf('\n=== FASE 3: Grafici e salvataggio ===\n');
 
-% Grafico con Q1 allineato (passa actions come 7° argomento)
-draw_tclab_history(latent, realCost, plant, cost, J, N, actions);
+% --- Vecchio draw (storico training) ---
+% draw_tclab_history(latent, realCost, plant, cost, J, N, actions);
+
+% --- Nuovo draw_case1: mostra l'ultimo rollout PILCO ---
+last_idx = J + N;                               % indice dell'ultimo rollout
+lt_last  = latent{last_idx};                     % (H+1) × nState
+T1_last  = lt_last(:, 1);                        % T1 [°C]
+T2_last  = lt_last(:, 2);                        % T2 [°C]
+N_pts    = size(lt_last, 1);                      % H+1 punti
+t_vec    = (0:N_pts-1)' * dt;                     % tempo [s]
+ref_last = cost.target(1) * ones(N_pts, 1);       % riferimento costante Tset [°C]
+
+% Q1: azione dell'ultimo rollout [0,100]%
+Q1_last  = actions{last_idx};                     % H × 1
+Q1_last  = [Q1_last(1); Q1_last];                 % allinea a (H+1) punti
+
+% Q2: nel Caso 1 il disturbo è definito nella ODE (range fisso)
+Q2_min_c1 = 0;   Q2_max_c1 = 0;                  % Caso 1: nessun disturbo Q2 esplicito
+Q2_last   = zeros(N_pts, 1);                      % placeholder Q2 = 0
+
+% Costo per step
+rc_last   = realCost{last_idx}(:);
+cost_last = [rc_last(1); rc_last];                % allinea a (H+1)
+
+% Errore di inseguimento
+err_last  = T1_last - ref_last;
+
+% Tamb e Tset (fissi nel Caso 1)
+Tamb_c1 = 25;                                     % Tamb [°C] — fisso
+Tset_c1 = cost.target(1);                          % Tset [°C]
+
+draw_case1(t_vec, T1_last, T2_last, ref_last, Q1_last, Q2_last, ...
+           cost_last, err_last, dt, Tamb_c1, Tset_c1, Q2_min_c1, Q2_max_c1);
 
 % Salva workspace
 save_path = fullfile(res_dir, 'case1_policy_trained.mat');
