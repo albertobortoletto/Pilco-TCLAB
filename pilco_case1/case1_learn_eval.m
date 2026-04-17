@@ -1,0 +1,117 @@
+%% case1_learn_eval.m
+% *Sommario:* Training + salvataggio — Caso 1: Tamb fissa, setpoint fisso T1=50°C.
+%
+% Loop PILCO standard:
+%   Fase 1 → J rollout casuali (raccoglie dati iniziali + Q1)
+%   Fase 2 → N iterazioni: trainDynModel + learnPolicy + applyController (+ raccolta Q1)
+%   Fase 3 → Salva risultati e grafici in results/
+
+%% 0. Inizializzazione
+case1_settings;
+
+
+%% =========================================================================
+%% Cartelle output (percorso assoluto basato su script_dir)
+%% =========================================================================
+
+script_dir = fileparts(mfilename('fullpath'));
+if isempty(script_dir), script_dir = pwd; end
+
+res_dir = fullfile(script_dir, 'results');
+fig_dir = fullfile(res_dir,    'figures');
+if ~exist(res_dir, 'dir'), mkdir(res_dir); end
+if ~exist(fig_dir, 'dir'), mkdir(fig_dir); end
+
+fprintf('Output → %s\n\n', res_dir);
+
+
+%% =========================================================================
+%% FASE 1: Rollout casuali iniziali
+%% =========================================================================
+% Raccoglie i primi dati per il GP con azioni CASUALI (struct senza policy).
+% Parallelamente salva Q1 in actions{} per il plot Q1 in draw_tclab_history.
+
+fprintf('=== FASE 1: Rollout casuali (%d rollout) ===\n', J);
+
+for jj = 1:J
+    [xx, yy, realCost{jj}, latent{jj}] = ...
+        rollout(gaussian(mu0, S0), struct('maxU', policy.maxU), H, plant, cost);
+
+    x = [x; xx];
+    y = [y; yy];
+
+    % Raccoglie Q1: xx(:,end) = output policy ∈ [-50,+50] → Q1 fisico [0,100]%
+    actions{jj} = xx(:, end) + 50;
+
+    fprintf('  Rollout iniziale %2d/%d — Costo: %.4f\n', jj, J, sum(realCost{jj}));
+end
+
+
+%% =========================================================================
+%% FASE 2: Loop principale PILCO
+%% =========================================================================
+
+fprintf('\n=== FASE 2: Loop PILCO (%d iterazioni) ===\n', N);
+
+for j = 1:N
+    fprintf('\n--- Iterazione PILCO %d/%d ---\n', j, N);
+
+    % --- 2a. Addestramento GP ---
+    % Usa tutti i dati x,y raccolti finora per fare fit del GP:
+    % f(T1, T2, u) → (ΔT1, ΔT2).
+    fprintf('  [2a] GP training (%d transizioni)...\n', size(x,1));
+    trainDynModel;
+
+    % --- 2b. Ottimizzazione policy ---
+    % Minimizza il costo atteso J(π) simulando H step con il GP.
+    % Nessuna interazione con il sistema fisico: solo gradiente sul GP.
+    fprintf('  [2b] Policy optimization...\n');
+    learnPolicy;
+
+    % --- 2c. Applicazione policy sul sistema ---
+    % Esegue UN episodio reale con la policy ottimizzata al passo precedente.
+    % applyController è uno script PILCO che chiama rollout(mu0Sim,S0Sim,...)
+    % e aggiorna x, y, realCost{j+J}, latent{j+J} nel workspace.
+    applyController;
+
+    % Raccoglie Q1 dal rollout appena eseguito.
+    % Dopo applyController, xx è disponibile nel workspace come variabile locale.
+    if exist('xx', 'var') && ~isempty(xx)
+        actions{j+J} = xx(:, end) + 50;   % Q1 [%]
+    end
+
+    fprintf('  Costo reale: %.4f\n', sum(realCost{j+J}));
+end
+
+
+%% =========================================================================
+%% FASE 3: Grafici e salvataggio
+%% =========================================================================
+
+fprintf('\n=== FASE 3: Grafici e salvataggio ===\n');
+
+% Grafico con Q1 allineato (passa actions come 7° argomento)
+draw_tclab_history(latent, realCost, plant, cost, J, N, actions);
+
+% Salva workspace
+save_path = fullfile(res_dir, 'case1_policy_trained.mat');
+save(save_path, ...
+     'policy', 'dynmodel', 'x', 'y', ...
+     'latent', 'realCost', 'actions', ...
+     'cost', 'plant', 'H', 'dt', 'J', 'N', ...
+     'opt', 'trainOpt', 'plotting', ...
+     'odei', 'dyno', 'poli', 'difi', 'mu0Sim', 'S0Sim');
+fprintf('Policy salvata: %s\n', save_path);
+
+% Salva figura 10 con findobj (robusto rispetto a ishandle/figure(10))
+fh = findobj('Type','figure','Number',10);
+if ~isempty(fh)
+    fig_path = fullfile(fig_dir, 'case1_training_history.png');
+    print(fh, fig_path, '-dpng', '-r150');
+    fprintf('Figura salvata: %s\n', fig_path);
+else
+    fprintf('Figura 10 non trovata.\n');
+end
+
+fprintf('\n=== Training Caso 1 completato! ===\n');
+fprintf('Rollout totali: %d (J=%d casuali + %d PILCO)\n', J+N, J, N);
