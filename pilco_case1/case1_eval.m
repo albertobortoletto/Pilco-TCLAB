@@ -44,6 +44,23 @@ fprintf('Policy caricata. Training summary:\n');
 fprintf('  dt = %d s | H = %d | J = %d rollout random | N = %d PILCO\n', dt, H, J, N);
 fprintf('  Tset = %.0f°C | Tamb = 25°C (fissa)\n', cost.target(1));
 
+% Ricostruisci mu0 / S0 se non presenti nel .mat (backward compatibility)
+if ~exist('mu0', 'var')
+    if exist('mu0Sim', 'var')
+        mu0 = mu0Sim(:);
+    else
+        mu0 = [25; 25];
+    end
+    fprintf('  [INFO] mu0 ricostruito: %s\n', mat2str(mu0'));
+end
+if ~exist('S0', 'var')
+    if exist('S0Sim', 'var')
+        S0 = S0Sim;
+    else
+        S0 = 0.5 * eye(length(mu0));
+    end
+end
+
 
 %% =========================================================================
 %% FASE 2: Rollout con la policy caricata
