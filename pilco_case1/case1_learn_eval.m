@@ -124,7 +124,7 @@ Tset_c1 = cost.target(1);                          % Tset [°C]
 draw_case1(t_vec, T1_last, T2_last, ref_last, Q1_last, Q2_last, ...
            cost_last, err_last, dt, Tamb_c1, Tset_c1, Q2_min_c1, Q2_max_c1);
 
-% Salva workspace
+% Salva workspace (solo l'ultima policy) in results/
 save_path = fullfile(res_dir, 'case1_policy_trained.mat');
 save(save_path, ...
      'policy', 'dynmodel', 'x', 'y', ...
@@ -133,6 +133,20 @@ save(save_path, ...
      'opt', 'trainOpt', 'plotting', ...
      'odei', 'dyno', 'poli', 'difi', 'mu0Sim', 'S0Sim');
 fprintf('Policy salvata: %s\n', save_path);
+
+% --- Pulizia file intermedi generati da applyController ---
+% applyController.m salva un file per ogni iterazione PILCO:
+%   basename + j + '_H' + H + '.mat'  (es. tclab_1_H30.mat, tclab_2_H30.mat, ...)
+% Questi file sono ridondanti perché l'ultima policy è già in results/.
+% Manteniamo solo l'ultimo e cancelliamo il resto.
+for jj_clean = 1:N
+    tmp_file = [basename num2str(jj_clean) '_H' num2str(H) '.mat'];
+    if exist(tmp_file, 'file')
+        delete(tmp_file);
+        fprintf('  Rimosso file intermedio: %s\n', tmp_file);
+    end
+end
+fprintf('File intermedi di applyController rimossi.\n');
 
 % Salva figura 10 con findobj (robusto rispetto a ishandle/figure(10))
 fh = findobj('Type','figure','Number',10);
@@ -145,4 +159,4 @@ else
 end
 
 fprintf('\n=== Training Caso 1 completato! ===\n');
-fprintf('Rollout totali: %d (J=%d casuali + %d PILCO)\n', J+N, J, N);
+fprintf('Rollout totali: %d (J=%d casuali + %d PILCO)\n', J+N, J, N);

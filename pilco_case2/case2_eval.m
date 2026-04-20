@@ -72,16 +72,20 @@ fprintf('%s\n', repmat('-',1,65));
 
 latent_eval   = cell(1, nT_eval);
 realCost_eval = cell(1, nT_eval);
+actions_eval  = cell(1, nT_eval);
 
 for te = 1:nT_eval
     Tamb_te = Tamb_eval(te);
     mu0_te  = [Tamb_te; Tamb_te; Tamb_te];   % T1=T2=T_init, Tamb_te corrente
     S0_te   = diag([0.5, 0.5, 0.001]);
 
-    [~, ~, rc, lt] = rollout(gaussian(mu0_te, S0_te), policy, H, plant, cost);
+    [xx_te, ~, rc, lt] = rollout(gaussian(mu0_te, S0_te), policy, H, plant, cost);
 
     latent_eval{te}   = lt;
     realCost_eval{te} = rc;
+    % xx_te ha colonne [stato, azione]: l'ultima colonna è l'output della policy
+    % policy output ∈ [-50,+50] → Q1 fisico [0,100]%
+    actions_eval{te}  = xx_te(:, end) + 50;
 
     T1_fin = lt(end, 1);
     err    = T1_fin - cost.target(1);
@@ -127,8 +131,9 @@ for te = 1:nT_eval
     rc_te = realCost_eval{te}(:);
     cost_te = [rc_te(1); rc_te];                     % allinea a (H+1)
 
-    % Q1: non disponibile direttamente, usa placeholder NaN
-    Q1_te = NaN(n_te, 1);
+    % Q1: estratto dal rollout — actions_eval{te} ha H punti, allinea a (H+1)
+    Q1_raw = actions_eval{te}(:);                    % H × 1
+    Q1_te  = [Q1_raw(1); Q1_raw];                    % (H+1) × 1
 
     % Q2: nel Caso 2 non c'è disturbo Q2 esplicito nello stato per eval
     Q2_te = zeros(n_te, 1);

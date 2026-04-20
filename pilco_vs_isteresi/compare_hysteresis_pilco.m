@@ -47,7 +47,7 @@ addpath(case3_dir);
 addpath(script_dir);
 
 % Cartelle output
-res_dir = fullfile(script_dir, '..', 'pilco_case3', 'results');
+res_dir = fullfile(script_dir, '..', 'pilco_vs_isteresi', 'results');
 fig_dir = fullfile(res_dir, 'figures');
 if ~exist(fig_dir, 'dir'), mkdir(fig_dir); end
 
@@ -112,7 +112,7 @@ fprintf('  Totale: %d step (%ds)\n', H_eval, H_eval * dt);
 
 fprintf('\n=== Simulazione PILCO ===\n');
 
-rng(42);  % V4: seed fisso per Q2
+rng(42, 'twister');  % V4: seed fisso per Q2
 
 % Pre-generazione Q2 per ogni gradino (stessa logica di case3_eval.m)
 Q2_per_step_pilco = Q2_min + (Q2_max - Q2_min) * rand(nSteps, 1);  % [%]
