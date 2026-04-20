@@ -18,11 +18,12 @@
 warning('off','all'); format short; format compact; 
 
 % Aggiunge i path delle cartelle della repository PILCO
-try
-  rd = '../../';
-  addpath([rd 'base'],[rd 'util'],[rd 'gp'],[rd 'control'],[rd 'loss']);
-catch
-end
+settings_dir = fileparts(mfilename('fullpath'));
+if isempty(settings_dir), settings_dir = pwd; end
+repo_root = fullfile(settings_dir, '..', '..');
+addpath(fullfile(repo_root, 'base'), fullfile(repo_root, 'util'), ...
+        fullfile(repo_root, 'gp'),   fullfile(repo_root, 'control'), ...
+        fullfile(repo_root, 'loss'));
 
 % Fissa i seed casuali per riproducibilità degli esperimenti
 rand('seed',5); randn('seed',13); 

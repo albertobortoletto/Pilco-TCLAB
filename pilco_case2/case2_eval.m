@@ -42,17 +42,17 @@ load(load_path);   % carica: policy, dynmodel, x, y, latent, realCost,
 Tamb_eval = [12, 45, 38, 60]; % Sovrascrivi le Tamb_eval lette dal file .mat
 nT_eval = length(Tamb_eval);  % Aggiorna coerentemente il numero di test
 
-% Ricarica i path della repository (potrebbero non essere nel path corrente)
-try
-    rd = '../../';
-    addpath([rd 'base'], [rd 'util'], [rd 'gp'], [rd 'control'], [rd 'loss']);
-catch
-end
+% Ricarica i path della repository (basati sulla posizione dello script)
+repo_root = fullfile(script_dir, '..', '..');
+addpath(fullfile(repo_root, 'base'), fullfile(repo_root, 'util'), ...
+        fullfile(repo_root, 'gp'),   fullfile(repo_root, 'control'), ...
+        fullfile(repo_root, 'loss'));
 
 fprintf('Policy caricata. Training summary:\n');
 fprintf('  Tamb training : %s °C\n', mat2str(Tamb_train));
 fprintf('  Tamb eval     : %s °C\n', mat2str(Tamb_eval));
 fprintf('  Rollout totali: %d\n', length(latent));
+
 
 
 %% =========================================================================
@@ -163,20 +163,15 @@ draw_case2(t_full_c2, T1_full_c2, T2_full_c2, ref_full_c2, ...
            Q1_full_c2, Q2_full_c2, cost_full_c2, err_full_c2, ...
            dt, Tamb_eval, Tset_seg_c2, seg_switch_t_c2, Q2_min_c2, Q2_max_c2);
 
-% Salva Figure
-fig_names = {11, 'case2_training'; 12, 'case2_evaluation'};
-
-for fi = 1:size(fig_names, 1)
-    fnum  = fig_names{fi, 1};
-    fname = fig_names{fi, 2};
-    if ishandle(fnum)
-        p = fullfile(fig_dir, [fname '.png']);
-        print(figure(fnum), p, '-dpng', '-r150');
-        fprintf('  Figura %d salvata: %s\n', fnum, p);
-    else
-        fprintf('  Figura %d non trovata (non generata).\n', fnum);
-    end
+% Salva la figura generata da draw_case2 (cerca per Name, non per numero)
+fh = findobj('Type', 'figure', 'Name', 'Caso 2 — Tset fisso, Tamb variabile');
+if ~isempty(fh)
+    fig_path = fullfile(fig_dir, 'case2_evaluation.png');
+    print(fh(1), fig_path, '-dpng', '-r150');
+    fprintf('  Figura salvata: %s\n', fig_path);
+else
+    fprintf('  Figura Case 2 non trovata.\n');
 end
 
 fprintf('\n=== Valutazione Case 2 completata! ===\n');
-fprintf('Figure salvate in: %s\n', fig_dir);
+fprintf('Figure salvate in: %s\n', fig_dir);
