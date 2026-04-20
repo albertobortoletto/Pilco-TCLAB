@@ -107,11 +107,7 @@ fprintf('%s\n', repmat('-',1,65));
 
 fprintf('\n=== FASE 3: Generazione grafici ===\n');
 
-% --- Vecchio draw (storico training + eval) ---
-% draw_case2_results(latent, realCost, latent_eval, realCost_eval, ...
-%                    plant, cost, J, N, Tamb_train, Tamb_eval);
-
-% --- Nuovo draw_case2: stitching dei rollout eval in una traiettoria continua ---
+% --- draw_case2: stitching dei rollout eval in una traiettoria continua ---
 T1_full_c2 = []; T2_full_c2 = []; Q1_full_c2 = [];
 ref_full_c2 = []; cost_full_c2 = []; err_full_c2 = [];
 Q2_full_c2 = []; t_full_c2 = [];
@@ -178,4 +174,4 @@ end
 
 fprintf('\n=== Valutazione Case 2 completata! ===\n');
 fprintf('Figure salvate in: %s\n', fig_dir);
-
+

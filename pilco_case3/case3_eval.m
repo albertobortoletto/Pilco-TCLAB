@@ -142,13 +142,6 @@ fprintf('  Errore finale massimo|e|: %.2f°C\n', max(abs(e_finals)));
 
 fprintf('\n=== FASE 3: Grafici ===\n');
 
-% --- Vecchio draw (storico training + scalinata) ---
-% draw_case3_results(latent, realCost, ...
-%                    latent_single, realCost_single, ...
-%                    stair_latent, stair_realCost, stair_actions, ...
-%                    plant, cost, J, N, ...
-%                    Tset_train, Tset_stair_eval, H_step_eval, Q2_eval);
-
 % --- Nuovo draw_case3_step: stitching della scalinata eval ---
 nSteps_c3 = length(Tset_stair_eval);
 T1_full_c3 = []; ref_full_c3 = []; Q1_full_c3 = [];
