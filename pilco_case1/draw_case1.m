@@ -38,7 +38,8 @@ Q1_perc = u_traj(:);          % [%] — già in [0,100] dalla chiamata esterna
 % Figura
 % =========================================================================
 % R8: NumberTitle off, Name descrittivo
-fig = figure('NumberTitle', 'off', 'Name', 'Caso 1 — Tset fisso, Tamb fissa');
+fig = figure('NumberTitle', 'off', 'Name', 'Caso 1 — Tset fisso, Tamb fissa', ...
+             'Color', 'w');
 clf(fig);
 % R10: Position [80, 50, 1100, 850]
 set(fig, 'Position', [80, 50, 1100, 850]);

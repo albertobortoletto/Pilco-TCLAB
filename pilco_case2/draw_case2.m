@@ -58,7 +58,8 @@ T1_vec   = T1_traj(:);
 % Figura
 % =========================================================================
 % R8: NumberTitle off, Name descrittivo
-fig = figure('NumberTitle', 'off', 'Name', 'Caso 2 — Tset fisso, Tamb variabile');
+fig = figure('NumberTitle', 'off', 'Name', 'Caso 2 — Tset fisso, Tamb variabile', ...
+             'Color', 'w');
 clf(fig);
 % R10: Position [80, 50, 1100, 850]
 set(fig, 'Position', [80, 50, 1100, 850]);

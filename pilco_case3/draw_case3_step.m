@@ -57,7 +57,8 @@ step_times_min = step_times(:) / 60;    % [min]
 % Figura
 % =========================================================================
 % R8: NumberTitle off, Name descrittivo
-fig = figure('NumberTitle', 'off', 'Name', 'Caso 3 — Tset variabile (gradini)');
+fig = figure('NumberTitle', 'off', 'Name', 'Caso 3 — Tset variabile (gradini)', ...
+             'Color', 'w');
 clf(fig);
 % R10/BUG5: Position [80, 50, 1100, 850]
 set(fig, 'Position', [80, 50, 1100, 850]);
