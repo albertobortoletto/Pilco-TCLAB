@@ -92,25 +92,30 @@ ylim(ax2, [-5, 110]);
 ax2.YColor = c_Q1;
 
 % --- Asse destro: Q2 ---
-yyaxis(ax2, 'right');
 Q2_vec = Q2_traj(:);
-scatter(ax2, t_min(1:length(Q2_vec)), Q2_vec, 12, c_Q2, 'filled', ...
-        'DisplayName', 'Q2 campioni', 'MarkerFaceAlpha', 0.5);
-% Media mobile Q2
-if length(Q2_vec) >= 5
-    Q2_smooth = movmean(Q2_vec, 5);
-    plot(ax2, t_min(1:length(Q2_vec)), Q2_smooth, '-', 'Color', c_Q2, ...
-         'LineWidth', 1.8, 'DisplayName', 'Q2 movmean(5)');
+has_Q2 = any(Q2_vec ~= 0) || (Q2_max > Q2_min);   % Q2 significativo?
+
+if has_Q2
+    yyaxis(ax2, 'right');
+    scatter(ax2, t_min(1:length(Q2_vec)), Q2_vec, 12, c_Q2, 'filled', ...
+            'DisplayName', 'Q2 campioni', 'MarkerFaceAlpha', 0.5);
+    % Media mobile Q2
+    if length(Q2_vec) >= 5
+        Q2_smooth = movmean(Q2_vec, 5);
+        plot(ax2, t_min(1:length(Q2_vec)), Q2_smooth, '-', 'Color', c_Q2, ...
+             'LineWidth', 1.8, 'DisplayName', 'Q2 movmean(5)');
+    end
+    yline(ax2, Q2_min, '--', 'Color', c_Q2 * 0.7, 'LineWidth', 1.0, ...
+          'Label', sprintf('Q2_{min}=%.0f%%', Q2_min), ...
+          'HandleVisibility', 'off');
+    yline(ax2, Q2_max, '--', 'Color', c_Q2 * 0.7, 'LineWidth', 1.0, ...
+          'Label', sprintf('Q2_{max}=%.0f%%', Q2_max), ...
+          'HandleVisibility', 'off');
+    ylabel(ax2, 'Q2 [%]');
+    ylim(ax2, [max(0, Q2_min - 3), Q2_max + 3]);
+    ax2.YColor = c_Q2;
+    yyaxis(ax2, 'left');   % torna a sinistra per linkaxes
 end
-yline(ax2, Q2_min, '--', 'Color', c_Q2 * 0.7, 'LineWidth', 1.0, ...
-      'Label', sprintf('Q2_{min}=%.0f%%', Q2_min), ...
-      'HandleVisibility', 'off');
-yline(ax2, Q2_max, '--', 'Color', c_Q2 * 0.7, 'LineWidth', 1.0, ...
-      'Label', sprintf('Q2_{max}=%.0f%%', Q2_max), ...
-      'HandleVisibility', 'off');
-ylabel(ax2, 'Q2 [%]');
-ylim(ax2, [max(0, Q2_min - 3), Q2_max + 3]);
-ax2.YColor = c_Q2;
 
 legend(ax2, 'Location', 'best', 'FontSize', 8);
 grid(ax2, 'on');
@@ -144,9 +149,17 @@ grid(ax3, 'on');
 title(ax3, 'Errore di inseguimento e(t) = T1 − r');
 
 % =========================================================================
-% R1: linkaxes su asse X
+% R1: linkaxes su asse X — usato con cautela per evitare conflitti con yyaxis
 % =========================================================================
-linkaxes([ax1, ax2, ax3], 'x');
+% NOTA: linkaxes può causare hang con yyaxis. Per sicurezza, facciamo link
+% manuale tramite listener-free xlim sync.
+try
+    linkaxes([ax1, ax2, ax3], 'x');
+catch
+    % Fallback: imposta xlim identici manualmente
+    xl = [min(t_min), max(t_min)];
+    xlim(ax1, xl); xlim(ax2, xl); xlim(ax3, xl);
+end
 
 % R2: xlabel solo sull'ultimo → rimuovi dagli altri
 set(ax1, 'XTickLabel', []);
@@ -157,7 +170,8 @@ sgtitle(sprintf('Caso 1 — T_{set} = %.0f°C | T_{amb} = %.0f°C | dt = %ds | Q
         Tset, Tamb, dt, Q2_min, Q2_max), ...
         'FontWeight', 'bold', 'FontSize', 13);
 
-% R9: drawnow
-drawnow;
+% R9: drawnow — force rendering
+drawnow('expose');
+pause(0.1);   % permette al rendering engine di completare
 
 end
