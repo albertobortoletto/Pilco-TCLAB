@@ -416,10 +416,13 @@ fprintf('\n');
 %% 7. Salvataggio figura e dati
 %% =========================================================================
 
-% Salva figura
-fig_path = fullfile(fig_dir, 'case3_comparison.png');
+% Salva figura combinata
+fig_path = fullfile(fig_dir, 'comparison_combined.png');
 print(fig, fig_path, '-dpng', '-r150');
-fprintf('Figura salvata: %s\n', fig_path);
+fprintf('Figura combinata salvata: %s\n', fig_path);
+
+% Singoli subplot
+save_subplots(fig, fig_dir, 'comparison');
 
 % Salva dati
 data_path = fullfile(res_dir, 'case3_comparison.mat');

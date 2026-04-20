@@ -32,11 +32,10 @@ policy_dir = fullfile(script_dir, 'results', 'policy');
 fig_dir    = fullfile(script_dir, 'results', 'figures');
 if ~exist(fig_dir, 'dir'), mkdir(fig_dir); end
 
-try
-    rd = '../../';
-    addpath([rd 'base'],[rd 'util'],[rd 'gp'],[rd 'control'],[rd 'loss']);
-catch
-end
+repo_root = fullfile(script_dir, '..', '..');
+addpath(fullfile(repo_root, 'base'), fullfile(repo_root, 'util'), ...
+        fullfile(repo_root, 'gp'),   fullfile(repo_root, 'control'), ...
+        fullfile(repo_root, 'loss'));
 
 fprintf('Policy caricata.\n');
 fprintf('  Tset_train    : %s °C\n', mat2str(Tset_train));
@@ -209,20 +208,17 @@ draw_case3_step(t_full_c3, T1_full_c3, ref_full_c3, Q1_full_c3, Q2_full_c3, ...
                 cost_full_c3, err_full_c3, dt, step_times_c3, ...
                 Tset_stair_eval, Tamb_c3, Q2_min_c3, Q2_max_c3, policy.maxU);
 
-% Salva figure con findobj (robusto, non dipende dall'handle numerico grezzo)
-fig_save = {13, 'case3_training'; 14, 'case3_staircase_eval'};
-
-for fi = 1:size(fig_save,1)
-    fnum  = fig_save{fi,1};
-    fname = fig_save{fi,2};
-    fh    = findobj('Type','figure','Number', fnum);   % ← cerca per numero, non ishandle
-    if ~isempty(fh)
-        out_png = fullfile(fig_dir, [fname '.png']);
-        print(fh, out_png, '-dpng', '-r150');
-        fprintf('  Figura %d salvata: %s\n', fnum, out_png);
-    else
-        fprintf('  Figura %d non trovata (non generata).\n', fnum);
-    end
+% Salva figura combinata + singoli subplot
+fh = findobj('Type', 'figure', 'Name', 'Caso 3 — Tset variabile (gradini)');
+if ~isempty(fh)
+    % Figura combinata
+    fig_path = fullfile(fig_dir, 'case3_combined.png');
+    print(fh(1), fig_path, '-dpng', '-r150');
+    fprintf('Figura combinata salvata: %s\n', fig_path);
+    % Singoli subplot
+    save_subplots(fh(1), fig_dir, 'case3');
+else
+    fprintf('  Figura Case 3 non trovata.\n');
 end
 
 fprintf('\n=== Valutazione Case 3 completata! ===\n');

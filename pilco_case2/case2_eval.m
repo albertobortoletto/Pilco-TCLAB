@@ -166,12 +166,16 @@ draw_case2(t_full_c2, T1_full_c2, T2_full_c2, ref_full_c2, ...
 % Salva la figura generata da draw_case2 (cerca per Name, non per numero)
 fh = findobj('Type', 'figure', 'Name', 'Caso 2 — Tset fisso, Tamb variabile');
 if ~isempty(fh)
-    fig_path = fullfile(fig_dir, 'case2_evaluation.png');
+    % Figura combinata
+    fig_path = fullfile(fig_dir, 'case2_combined.png');
     print(fh(1), fig_path, '-dpng', '-r150');
-    fprintf('  Figura salvata: %s\n', fig_path);
+    fprintf('Figura combinata salvata: %s\n', fig_path);
+    % Singoli subplot
+    save_subplots(fh(1), fig_dir, 'case2');
 else
     fprintf('  Figura Case 2 non trovata.\n');
 end
 
 fprintf('\n=== Valutazione Case 2 completata! ===\n');
-fprintf('Figure salvate in: %s\n', fig_dir);
+fprintf('Figure salvate in: %s\n', fig_dir);
+

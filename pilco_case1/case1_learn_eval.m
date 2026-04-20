@@ -152,14 +152,17 @@ for jj_clean = 1:N
 end
 fprintf('File intermedi di applyController rimossi.\n');
 
-% Salva figura 10 con findobj (robusto rispetto a ishandle/figure(10))
-fh = findobj('Type','figure','Number',10);
+% Salva figura combinata + singoli subplot
+fh = findobj('Type', 'figure', 'Name', 'Caso 1 — Tset fisso, Tamb fissa');
 if ~isempty(fh)
-    fig_path = fullfile(fig_dir, 'case1_training_history.png');
-    print(fh, fig_path, '-dpng', '-r150');
-    fprintf('Figura salvata: %s\n', fig_path);
+    % Figura combinata
+    fig_path = fullfile(fig_dir, 'case1_combined.png');
+    print(fh(1), fig_path, '-dpng', '-r150');
+    fprintf('Figura combinata salvata: %s\n', fig_path);
+    % Singoli subplot
+    save_subplots(fh(1), fig_dir, 'case1');
 else
-    fprintf('Figura 10 non trovata.\n');
+    fprintf('Figura Case 1 non trovata.\n');
 end
 
 fprintf('\n=== Training Caso 1 completato! ===\n');
