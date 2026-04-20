@@ -32,7 +32,7 @@ policy_dir = fullfile(script_dir, 'results', 'policy');
 fig_dir    = fullfile(script_dir, 'results', 'figures');
 if ~exist(fig_dir, 'dir'), mkdir(fig_dir); end
 
-repo_root = fullfile(script_dir, '..', '..');
+repo_root = fullfile(script_dir, '..');
 addpath(fullfile(repo_root, 'base'), fullfile(repo_root, 'util'), ...
         fullfile(repo_root, 'gp'),   fullfile(repo_root, 'control'), ...
         fullfile(repo_root, 'loss'));
@@ -202,8 +202,11 @@ draw_case3_step(t_full_c3, T1_full_c3, ref_full_c3, Q1_full_c3, Q2_full_c3, ...
                 Tset_stair_eval, Tamb_c3, Q2_min_c3, Q2_max_c3, policy.maxU);
 
 % Salva figura combinata + singoli subplot
+drawnow;  % assicura rendering completo prima di cercare la figura
 fh = findobj('Type', 'figure', 'Name', 'Caso 3 — Tset variabile (gradini)');
-if ~isempty(fh)
+if ~isempty(fh) && isvalid(fh(1))
+    % Forza sfondo bianco per export
+    set(fh(1), 'Color', 'w', 'InvertHardcopy', 'on');
     % Figura combinata
     fig_path = fullfile(fig_dir, 'case3_combined.png');
     print(fh(1), fig_path, '-dpng', '-r150');
@@ -211,7 +214,7 @@ if ~isempty(fh)
     % Singoli subplot
     save_subplots(fh(1), fig_dir, 'case3');
 else
-    fprintf('  Figura Case 3 non trovata.\n');
+    fprintf('  Figura Case 3 non trovata o handle non valido.\n');
 end
 
 fprintf('\n=== Valutazione Case 3 completata! ===\n');

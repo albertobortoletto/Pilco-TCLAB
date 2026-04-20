@@ -32,7 +32,7 @@ fprintf('=== Caricamento policy da: %s ===\n', load_path);
 load(load_path);
 
 % Ricarica i path della repository
-repo_root = fullfile(script_dir, '..', '..');
+repo_root = fullfile(script_dir, '..');
 addpath(fullfile(repo_root, 'base'), fullfile(repo_root, 'util'), ...
         fullfile(repo_root, 'gp'),   fullfile(repo_root, 'control'), ...
         fullfile(repo_root, 'loss'));
@@ -115,8 +115,11 @@ draw_case1(t_vec, T1_eval, T2_eval, ref_eval, Q1_eval, Q2_eval, ...
            cost_eval, err_eval, dt, Tamb_c1, Tset_c1, Q2_min_c1, Q2_max_c1);
 
 % Salva la figura
+drawnow;  % assicura rendering completo
 fh = findobj('Type', 'figure', 'Name', 'Caso 1 — Tset fisso, Tamb fissa');
-if ~isempty(fh)
+if ~isempty(fh) && isvalid(fh(1))
+    % Forza sfondo bianco per export
+    set(fh(1), 'Color', 'w', 'InvertHardcopy', 'on');
     % Figura combinata
     fig_path = fullfile(fig_dir, 'case1_combined.png');
     print(fh(1), fig_path, '-dpng', '-r150');
@@ -124,7 +127,7 @@ if ~isempty(fh)
     % Singoli subplot
     save_subplots(fh(1), fig_dir, 'case1');
 else
-    fprintf('Figura Case 1 non trovata.\n');
+    fprintf('Figura Case 1 non trovata o handle non valido.\n');
 end
 
 fprintf('\n=== Valutazione Case 1 completata! ===\n');

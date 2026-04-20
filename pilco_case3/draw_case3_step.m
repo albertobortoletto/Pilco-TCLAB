@@ -62,6 +62,7 @@ fig = figure('NumberTitle', 'off', 'Name', 'Caso 3 — Tset variabile (gradini)'
 clf(fig);
 % R10/BUG5: Position [80, 50, 1100, 850]
 set(fig, 'Position', [80, 50, 1100, 850]);
+set(fig, 'InvertHardcopy', 'on');  % sfondo bianco in print/export
 
 % =========================================================================
 % Helper: sfondo colorato per gradini

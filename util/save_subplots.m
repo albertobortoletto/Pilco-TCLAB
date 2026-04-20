@@ -21,6 +21,12 @@ function save_subplots(fig_handle, fig_dir, prefix, dpi)
     if nargin < 4 || isempty(dpi), dpi = 150; end
     if ~exist(fig_dir, 'dir'), mkdir(fig_dir); end
 
+    % Controlla che la figura sia ancora valida
+    if ~isvalid(fig_handle)
+        fprintf('  save_subplots: handle figura non valido (chiusa?), salto.\n');
+        return;
+    end
+
     % Forza sfondo bianco per output consistente
     set(fig_handle, 'Color', 'w');
     set(fig_handle, 'InvertHardcopy', 'on');

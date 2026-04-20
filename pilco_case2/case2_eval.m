@@ -43,7 +43,7 @@ Tamb_eval = [12, 45, 38, 60]; % Sovrascrivi le Tamb_eval lette dal file .mat
 nT_eval = length(Tamb_eval);  % Aggiorna coerentemente il numero di test
 
 % Ricarica i path della repository (basati sulla posizione dello script)
-repo_root = fullfile(script_dir, '..', '..');
+repo_root = fullfile(script_dir, '..');
 addpath(fullfile(repo_root, 'base'), fullfile(repo_root, 'util'), ...
         fullfile(repo_root, 'gp'),   fullfile(repo_root, 'control'), ...
         fullfile(repo_root, 'loss'));
@@ -160,8 +160,11 @@ draw_case2(t_full_c2, T1_full_c2, T2_full_c2, ref_full_c2, ...
            dt, Tamb_eval, Tset_seg_c2, seg_switch_t_c2, Q2_min_c2, Q2_max_c2);
 
 % Salva la figura generata da draw_case2 (cerca per Name, non per numero)
+drawnow;  % assicura rendering completo
 fh = findobj('Type', 'figure', 'Name', 'Caso 2 — Tset fisso, Tamb variabile');
-if ~isempty(fh)
+if ~isempty(fh) && isvalid(fh(1))
+    % Forza sfondo bianco per export
+    set(fh(1), 'Color', 'w', 'InvertHardcopy', 'on');
     % Figura combinata
     fig_path = fullfile(fig_dir, 'case2_combined.png');
     print(fh(1), fig_path, '-dpng', '-r150');
@@ -169,7 +172,7 @@ if ~isempty(fh)
     % Singoli subplot
     save_subplots(fh(1), fig_dir, 'case2');
 else
-    fprintf('  Figura Case 2 non trovata.\n');
+    fprintf('  Figura Case 2 non trovata o handle non valido.\n');
 end
 
 fprintf('\n=== Valutazione Case 2 completata! ===\n');

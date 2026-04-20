@@ -154,8 +154,11 @@ end
 fprintf('File intermedi di applyController rimossi.\n');
 
 % Salva figura combinata + singoli subplot
+drawnow;  % assicura rendering completo
 fh = findobj('Type', 'figure', 'Name', 'Caso 1 — Tset fisso, Tamb fissa');
-if ~isempty(fh)
+if ~isempty(fh) && isvalid(fh(1))
+    % Forza sfondo bianco per export
+    set(fh(1), 'Color', 'w', 'InvertHardcopy', 'on');
     % Figura combinata
     fig_path = fullfile(fig_dir, 'case1_combined.png');
     print(fh(1), fig_path, '-dpng', '-r150');
@@ -163,7 +166,7 @@ if ~isempty(fh)
     % Singoli subplot
     save_subplots(fh(1), fig_dir, 'case1');
 else
-    fprintf('Figura Case 1 non trovata.\n');
+    fprintf('Figura Case 1 non trovata o handle non valido.\n');
 end
 
 fprintf('\n=== Training Caso 1 completato! ===\n');

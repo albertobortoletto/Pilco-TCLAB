@@ -63,6 +63,7 @@ fig = figure('NumberTitle', 'off', 'Name', 'Caso 2 — Tset fisso, Tamb variabil
 clf(fig);
 % R10: Position [80, 50, 1100, 850]
 set(fig, 'Position', [80, 50, 1100, 850]);
+set(fig, 'InvertHardcopy', 'on');  % sfondo bianco in print/export
 
 % =========================================================================
 % Helper: disegna bande colorate di sfondo per ogni segmento

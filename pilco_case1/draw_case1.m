@@ -43,6 +43,7 @@ fig = figure('NumberTitle', 'off', 'Name', 'Caso 1 — Tset fisso, Tamb fissa', 
 clf(fig);
 % R10: Position [80, 50, 1100, 850]
 set(fig, 'Position', [80, 50, 1100, 850]);
+set(fig, 'InvertHardcopy', 'on');  % sfondo bianco in print/export
 
 % =========================================================================
 % SP1 (40%): T1 vs riferimento [°C]
