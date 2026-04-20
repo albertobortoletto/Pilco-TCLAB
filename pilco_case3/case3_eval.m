@@ -142,7 +142,7 @@ fprintf('  Errore finale massimo|e|: %.2f°C\n', max(abs(e_finals)));
 
 fprintf('\n=== FASE 3: Grafici ===\n');
 
-% --- Nuovo draw_case3_step: stitching della scalinata eval ---
+% ---draw_case3_step: stitching della scalinata eval ---
 nSteps_c3 = length(Tset_stair_eval);
 T1_full_c3 = []; ref_full_c3 = []; Q1_full_c3 = [];
 Q2_full_c3 = []; cost_full_c3 = []; err_full_c3 = [];
