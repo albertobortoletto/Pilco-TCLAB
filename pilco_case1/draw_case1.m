@@ -43,7 +43,7 @@ fig = figure('NumberTitle', 'off', 'Name', 'Caso 1 — Tset fisso, Tamb fissa', 
 clf(fig);
 % R10: Position [80, 50, 1100, 850]
 set(fig, 'Position', [80, 50, 1100, 850]);
-set(fig, 'InvertHardcopy', 'on');  % sfondo bianco in print/export
+set(fig, 'InvertHardcopy', 'off');  % non invertire: i colori sono già espliciti
 
 % =========================================================================
 % SP1 (40%): T1 vs riferimento [°C]
@@ -167,13 +167,38 @@ end
 set(ax1, 'XTickLabel', []);
 set(ax2, 'XTickLabel', []);
 
+% =========================================================================
+% Stile leggibile: sfondo bianco, contorno nero, titoli marcati
+% =========================================================================
+for aa = [ax1, ax2, ax3]
+    set(aa, 'Color', 'w');                          % sfondo bianco nell'area dati
+    set(aa, 'XColor', 'k');                          % asse X nero (bordo+tick+label)
+    set(aa, 'GridColor', [0.15 0.15 0.15]);          % griglia scura
+    set(aa, 'GridAlpha', 0.3);
+    set(get(aa, 'Title'), 'Color', 'k', 'FontWeight', 'bold', 'FontSize', 12);
+    set(get(aa, 'XLabel'), 'Color', 'k', 'FontSize', 10);
+    set(get(aa, 'YLabel'), 'Color', 'k', 'FontSize', 10);
+end
+% YColor nero per axes senza yyaxis
+set(ax1, 'YColor', 'k');
+set(ax3, 'YColor', 'k');
+% ax2: i colori Y sinistro/destro sono già fissati per Q1/Q2
+
+% Legende con sfondo bianco
+for aa = [ax1, ax2, ax3]
+    lg = findobj(aa, 'Type', 'Legend');
+    if ~isempty(lg)
+        set(lg, 'TextColor', 'k', 'EdgeColor', [0.5 0.5 0.5], 'Color', 'w');
+    end
+end
+
 % R3: sgtitle con info essenziali
 sgtitle(sprintf('Caso 1 — T_{set} = %.0f°C | T_{amb} = %.0f°C | dt = %ds | Q2 \\in [%.0f, %.0f]%%', ...
         Tset, Tamb, dt, Q2_min, Q2_max), ...
-        'FontWeight', 'bold', 'FontSize', 13);
+        'FontWeight', 'bold', 'FontSize', 14, 'Color', 'k');
 
 % R9: drawnow — force rendering
-drawnow('expose');
+drawnow;
 pause(0.1);   % permette al rendering engine di completare
 
 end

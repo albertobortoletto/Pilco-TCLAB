@@ -206,7 +206,7 @@ drawnow;  % assicura rendering completo prima di cercare la figura
 fh = findobj('Type', 'figure', 'Name', 'Caso 3 — Tset variabile (gradini)');
 if ~isempty(fh) && isvalid(fh(1))
     % Forza sfondo bianco per export
-    set(fh(1), 'Color', 'w', 'InvertHardcopy', 'on');
+    set(fh(1), 'Color', 'w', 'InvertHardcopy', 'off');
     % Figura combinata
     fig_path = fullfile(fig_dir, 'case3_combined.png');
     print(fh(1), fig_path, '-dpng', '-r150');

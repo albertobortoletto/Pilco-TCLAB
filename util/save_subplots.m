@@ -29,7 +29,7 @@ function save_subplots(fig_handle, fig_dir, prefix, dpi)
 
     % Forza sfondo bianco per output consistente
     set(fig_handle, 'Color', 'w');
-    set(fig_handle, 'InvertHardcopy', 'on');
+    set(fig_handle, 'InvertHardcopy', 'off');  % i colori sono già espliciti
 
     % =====================================================================
     % 1. Trova tutti gli Axes reali (escludi legende, colorbar)

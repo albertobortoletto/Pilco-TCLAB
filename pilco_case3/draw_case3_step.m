@@ -62,7 +62,7 @@ fig = figure('NumberTitle', 'off', 'Name', 'Caso 3 — Tset variabile (gradini)'
 clf(fig);
 % R10/BUG5: Position [80, 50, 1100, 850]
 set(fig, 'Position', [80, 50, 1100, 850]);
-set(fig, 'InvertHardcopy', 'on');  % sfondo bianco in print/export
+set(fig, 'InvertHardcopy', 'off');  % non invertire: i colori sono già espliciti
 
 % =========================================================================
 % Helper: sfondo colorato per gradini
@@ -253,12 +253,37 @@ linkaxes([ax1, ax2, ax3], 'x');
 set(ax1, 'XTickLabel', []);
 set(ax2, 'XTickLabel', []);
 
+% =========================================================================
+% Stile leggibile: sfondo bianco, contorno nero, titoli marcati
+% =========================================================================
+for aa = [ax1, ax2, ax3]
+    set(aa, 'Color', 'w');                          % sfondo bianco
+    set(aa, 'XColor', 'k');                          % asse X nero
+    set(aa, 'GridColor', [0.15 0.15 0.15]);
+    set(aa, 'GridAlpha', 0.3);
+    set(get(aa, 'Title'), 'Color', 'k', 'FontWeight', 'bold', 'FontSize', 12);
+    set(get(aa, 'XLabel'), 'Color', 'k', 'FontSize', 10);
+    set(get(aa, 'YLabel'), 'Color', 'k', 'FontSize', 10);
+end
+% YColor nero per axes senza yyaxis
+set(ax1, 'YColor', 'k');
+set(ax3, 'YColor', 'k');
+% ax2: i colori Y sinistro/destro sono già fissati per Q1/Q2
+
+% Legende con sfondo bianco e testo nero
+for aa = [ax1, ax2, ax3]
+    lg = findobj(aa, 'Type', 'Legend');
+    if ~isempty(lg)
+        set(lg, 'TextColor', 'k', 'EdgeColor', [0.5 0.5 0.5], 'Color', 'w');
+    end
+end
+
 % R3: sgtitle con info essenziali
 Tset_str = strjoin(arrayfun(@(x) sprintf('%.0f', x), Tset_seq, ...
            'UniformOutput', false), '→');
 sgtitle(sprintf('Caso 3 — T_{set} = [%s]°C | T_{amb} = %.0f°C | dt = %ds | Q2 \\in [%.0f, %.0f]%%', ...
         Tset_str, Tamb, dt, Q2_min, Q2_max), ...
-        'FontWeight', 'bold', 'FontSize', 13);
+        'FontWeight', 'bold', 'FontSize', 14, 'Color', 'k');
 
 % R9: drawnow
 drawnow;

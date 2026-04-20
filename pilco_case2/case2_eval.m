@@ -164,7 +164,7 @@ drawnow;  % assicura rendering completo
 fh = findobj('Type', 'figure', 'Name', 'Caso 2 — Tset fisso, Tamb variabile');
 if ~isempty(fh) && isvalid(fh(1))
     % Forza sfondo bianco per export
-    set(fh(1), 'Color', 'w', 'InvertHardcopy', 'on');
+    set(fh(1), 'Color', 'w', 'InvertHardcopy', 'off');
     % Figura combinata
     fig_path = fullfile(fig_dir, 'case2_combined.png');
     print(fh(1), fig_path, '-dpng', '-r150');
