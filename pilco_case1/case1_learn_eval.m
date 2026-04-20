@@ -94,8 +94,11 @@ fprintf('\n=== FASE 3: Grafici e salvataggio ===\n');
 % draw_tclab_history(latent, realCost, plant, cost, J, N, actions);
 
 % --- Nuovo draw_case1: mostra l'ultimo rollout PILCO ---
-last_idx = J + N;                               % indice dell'ultimo rollout
-lt_last  = latent{last_idx};                     % (H+1) × nState
+% NOTA: applyController.m usa indici diversi:
+%   latent{j}      → j = 1..N  (sovrascrive i primi N random)
+%   realCost{j+J}  → j+J = J+1..J+N
+%   actions{j+J}   → j+J = J+1..J+N
+lt_last  = latent{N};                                % (H+1) × nState — ultimo PILCO
 T1_last  = lt_last(:, 1);                        % T1 [°C]
 T2_last  = lt_last(:, 2);                        % T2 [°C]
 N_pts    = size(lt_last, 1);                      % H+1 punti
@@ -103,7 +106,7 @@ t_vec    = (0:N_pts-1)' * dt;                     % tempo [s]
 ref_last = cost.target(1) * ones(N_pts, 1);       % riferimento costante Tset [°C]
 
 % Q1: azione dell'ultimo rollout [0,100]%
-Q1_last  = actions{last_idx};                     % H × 1
+Q1_last  = actions{J + N};                        % H × 1
 Q1_last  = [Q1_last(1); Q1_last];                 % allinea a (H+1) punti
 
 % Q2: nel Caso 1 il disturbo è definito nella ODE (range fisso)
@@ -111,8 +114,9 @@ Q2_min_c1 = 0;   Q2_max_c1 = 0;                  % Caso 1: nessun disturbo Q2 es
 Q2_last   = zeros(N_pts, 1);                      % placeholder Q2 = 0
 
 % Costo per step
-rc_last   = realCost{last_idx}(:);
+rc_last   = realCost{J + N}(:);
 cost_last = [rc_last(1); rc_last];                % allinea a (H+1)
+
 
 % Errore di inseguimento
 err_last  = T1_last - ref_last;
