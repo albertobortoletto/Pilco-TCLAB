@@ -400,14 +400,14 @@ pct_in_band_H = 100 * sum(abs(e_hyst_vec) < 2) / length(e_hyst_vec);  % [%]
 
 fprintf('\n');
 fprintf('╔══════════════════════════════════════════════════════════╗\n');
-fprintf('║         Confronto PILCO vs Isteresi — Caso 3            ║\n');
+fprintf('║         Confronto PILCO vs Isteresi — Caso 3             ║\n');
 fprintf('╠═════════════════╦═══════════════╦════════════════════════╣\n');
 fprintf('║ Metrica         ║     PILCO     ║      Isteresi          ║\n');
 fprintf('╠═════════════════╬═══════════════╬════════════════════════╣\n');
 fprintf('║ Costo medio     ║    %.4f     ║       %.4f           ║\n', costo_medio_P, costo_medio_H);
 fprintf('║ Costo totale    ║    %.4f    ║       %.4f          ║\n', costo_tot_P, costo_tot_H);
 fprintf('║ RMSE tracking   ║    %.2f °C    ║       %.2f °C          ║\n', rmse_P, rmse_H);
-fprintf('║ Max |errore|    ║    %.2f °C    ║       %.2f °C          ║\n', max_err_P, max_err_H);
+fprintf('║ Max |errore|    ║    %.2f °C   ║       %.2f °C         ║\n', max_err_P, max_err_H);
 fprintf('║ %% entro ±2°C    ║    %.1f %%     ║       %.1f %%           ║\n', pct_in_band_P, pct_in_band_H);
 fprintf('╚═════════════════╩═══════════════╩════════════════════════╝\n');
 fprintf('\n');
