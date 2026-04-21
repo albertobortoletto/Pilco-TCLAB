@@ -146,6 +146,20 @@ end
 
 
 %% =========================================================================
+%% Training plot
+%% =========================================================================
+
+draw_case3_training(latent, realCost, J, N, dt, ...
+                    Tset_train, nT_train, T1_init);
+% Salva la figura training
+fh_tr = findobj('Type','figure','Name','Caso 3 — Training');
+if ~isempty(fh_tr)
+    print(fh_tr, fullfile(fig_dir,'case3_training.png'), '-dpng', '-r150');
+    fprintf('Figura training salvata: %s\n', fullfile(fig_dir,'case3_training.png'));
+end
+
+
+%% =========================================================================
 %% FASE 3: Salvataggio (percorso assoluto)
 %% =========================================================================
 

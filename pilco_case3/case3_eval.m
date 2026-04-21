@@ -86,7 +86,7 @@ fprintf('%s\n', repmat('-',1,65));
 %   Inizio gradino s+1: e_new = T1_fin - Tset_{s+1}  ← errore ri-calcolato
 %
 % Q1 viene estratto da rollout: xx(:,end) = output policy ∈ [-50,+50]
-%   Q1_fisico [%] = xx(:,end) + 50  ∈ [0,100]
+%   Salvato come raw; draw_case3_step fa internamente +maxU → [0,100]%
 
 fprintf('\n=== FASE 2b: Scalinata mai vista ===\n');
 fprintf('Scalinata: %s °C  |  Q2=%.1f%%  |  %d step/gradino (%ds)\n', ...
@@ -114,7 +114,7 @@ for s = 1:nSteps
 
     stair_latent{s}   = lt;
     stair_realCost{s} = rc;
-    stair_actions{s}  = xx(:, end) + 50;   % converti in potenza [0,100]%
+    stair_actions{s}  = xx(:, end);        % output policy grezzo [-50,+50] (draw_case3_step fa +maxU)
 
     e_fin  = lt(end,1);
     T2_fin = lt(end,2);
@@ -124,7 +124,7 @@ for s = 1:nSteps
     tag = ''; if ~in_range, tag = ' [extrap]'; end
 
     fprintf('  Gradino %d: Tset=%2.0f°C%s | e_0=%+.1f → e_fin=%+.2f°C | T1_fin=%.1f°C | Q1_medio=%.1f%% | Costo=%.4f\n', ...
-            s, Tset_s, tag, e_s, e_fin, T1_fin, mean(stair_actions{s}), sum(rc));
+            s, Tset_s, tag, e_s, e_fin, T1_fin, mean(stair_actions{s}) + 50, sum(rc));
 
     T1_cur = T1_fin;
     T2_cur = T2_fin;

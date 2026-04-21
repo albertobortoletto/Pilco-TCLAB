@@ -227,10 +227,12 @@ c_xline = [0.50, 0.50, 0.50];   % grigio
 t_min = t_eval / 60;                           % [min]
 
 % R8: NumberTitle off, Name descrittivo
-fig = figure('NumberTitle', 'off', 'Name', 'Confronto PILCO vs Isteresi — Caso 3');
+fig = figure('NumberTitle', 'off', 'Name', 'Confronto PILCO vs Isteresi — Caso 3', ...
+             'Color', 'w');
 clf(fig);
 % R10: Position
 set(fig, 'Position', [80, 50, 1100, 850]);
+set(fig, 'InvertHardcopy', 'off');  % non invertire: i colori sono già espliciti
 
 % ---- SP1: Temperatura T1 [°C] ----
 ax1 = subplot(4, 1, 1); hold on;
@@ -374,6 +376,28 @@ Tset_str = strjoin(arrayfun(@(x) sprintf('%.0f', x), Tset_seq, ...
 sgtitle(sprintf('Confronto PILCO vs Isteresi — T_{set} = [%s]°C | T_{amb} = %.0f°C | dt = %ds', ...
         Tset_str, Tamb, dt), ...
         'FontWeight', 'bold', 'FontSize', 13);
+
+% =========================================================================
+% Stile leggibile: sfondo bianco, contorno nero, titoli marcati
+% =========================================================================
+for aa = [ax1, ax2, ax3, ax4]
+    set(aa, 'Color', 'w');                          % sfondo bianco
+    set(aa, 'XColor', 'k');                          % asse X nero
+    set(aa, 'YColor', 'k');                          % asse Y nero
+    set(aa, 'GridColor', [0.15 0.15 0.15]);
+    set(aa, 'GridAlpha', 0.3);
+    set(get(aa, 'Title'), 'Color', 'k', 'FontWeight', 'bold', 'FontSize', 12);
+    set(get(aa, 'XLabel'), 'Color', 'k', 'FontSize', 10);
+    set(get(aa, 'YLabel'), 'Color', 'k', 'FontSize', 10);
+end
+
+% Legende con sfondo bianco e testo nero
+for aa = [ax1, ax2, ax3, ax4]
+    lg = findobj(aa, 'Type', 'Legend');
+    if ~isempty(lg)
+        set(lg, 'TextColor', 'k', 'EdgeColor', [0.5 0.5 0.5], 'Color', 'w');
+    end
+end
 
 % R9: drawnow
 drawnow;

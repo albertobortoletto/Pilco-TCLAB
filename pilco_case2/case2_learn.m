@@ -175,6 +175,19 @@ end
 
 
 %% =========================================================================
+%% Training plot
+%% =========================================================================
+
+draw_case2_training(latent, realCost, J, N, dt, Tamb_train, cost.target(1));
+% Salva la figura training
+fh_tr = findobj('Type','figure','Name','Caso 2 — Training');
+if ~isempty(fh_tr)
+    print(fh_tr, fullfile(fig_dir,'case2_training.png'), '-dpng', '-r150');
+    fprintf('Figura training salvata: %s\n', fullfile(fig_dir,'case2_training.png'));
+end
+
+
+%% =========================================================================
 %% FASE 3: Salvataggio
 %% =========================================================================
 
