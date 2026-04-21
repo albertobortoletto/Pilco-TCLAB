@@ -139,6 +139,7 @@ legend(ax1, 'Location', 'best', 'FontSize', 8);
 grid(ax1, 'on');
 ylim(ax1, [T1_lo, T1_hi]);
 title(ax1, 'T1 misurata vs riferimento — bande colorate = segmento Tamb');
+xlabel(ax1, 'Tempo [min]');
 
 % =========================================================================
 % SP2 (25%): Q1 [%] sinistro + Q2 [%] destro
@@ -179,6 +180,7 @@ ax2.YColor = c_Q2;
 legend(ax2, 'Location', 'best', 'FontSize', 8);
 grid(ax2, 'on');
 title(ax2, 'Q1 + Q2 disturbo');
+xlabel(ax2, 'Tempo [min]');
 
 % =========================================================================
 % SP3 (20%): Errore e(t) = T1 - r [°C]
@@ -205,6 +207,7 @@ ylabel(ax3, 'Errore [°C]');
 legend(ax3, 'Location', 'best', 'FontSize', 8);
 grid(ax3, 'on');
 title(ax3, 'Errore di inseguimento e(t) = T1 − r');
+xlabel(ax3, 'Tempo [min]');
 
 % =========================================================================
 % SP4 (20%): Costo lossSat [0,1] + movmean(8)
@@ -226,7 +229,7 @@ if length(cost_vec) >= 8
          'DisplayName', 'movmean(8)');
 end
 
-xlabel(ax4, 'Tempo [min]');   % R2: xlabel solo sull'ultimo
+xlabel(ax4, 'Tempo [min]');
 ylabel(ax4, 'Costo lossSat [0,1]');
 ylim(ax4, [0, 1.05]);
 legend(ax4, 'Location', 'best', 'FontSize', 8);

@@ -267,6 +267,7 @@ ylabel(ax1, 'T1 [°C]');
 legend(ax1, 'Location', 'best', 'FontSize', 8);
 grid(ax1, 'on');
 title(ax1, 'Temperatura T1 nel tempo');
+xlabel(ax1, 'Tempo [min]');
 
 % ---- SP2: Q1 controllo [%] ----
 ax2 = subplot(4, 1, 2); hold on;
@@ -296,6 +297,7 @@ ylim(ax2, [-5, 110]);
 legend(ax2, 'Location', 'best', 'FontSize', 8);
 grid(ax2, 'on');
 title(ax2, 'Azione di controllo Q1');
+xlabel(ax2, 'Tempo [min]');
 
 % ---- SP3: Errore di tracking e(t) [°C] ----
 ax3 = subplot(4, 1, 3); hold on;
@@ -325,6 +327,7 @@ ylabel(ax3, 'Errore [°C]');
 legend(ax3, 'Location', 'best', 'FontSize', 8);
 grid(ax3, 'on');
 title(ax3, 'Errore di tracking e(t) = T1 − r(t)');
+xlabel(ax3, 'Tempo [min]');
 
 % ---- SP4: Costo lossSat cumulativo normalizzato [0,1] ----
 ax4 = subplot(4, 1, 4); hold on;
@@ -355,7 +358,7 @@ for ss = 2:nSteps
           'LineWidth', 1.3, 'HandleVisibility', 'off');
 end
 
-xlabel(ax4, 'Tempo [min]');   % R2: xlabel solo sull'ultimo
+xlabel(ax4, 'Tempo [min]');
 ylabel(ax4, 'Costo lossSat [0,1]');
 ylim(ax4, [0, 1.05]);
 legend(ax4, 'Location', 'best', 'FontSize', 8);
@@ -440,13 +443,15 @@ fprintf('\n');
 %% 7. Salvataggio figura e dati
 %% =========================================================================
 
-% Salva figura combinata
+% Singoli subplot — VA CHIAMATO PRIMA DI print()
+% (print() modifica lo stato interno della figura e invalida exportgraphics)
+save_subplots(fig, fig_dir, 'comparison');
+
+% Salva figura combinata (DOPO save_subplots)
+drawnow;
 fig_path = fullfile(fig_dir, 'comparison_combined.png');
 print(fig, fig_path, '-dpng', '-r150');
 fprintf('Figura combinata salvata: %s\n', fig_path);
-
-% Singoli subplot
-save_subplots(fig, fig_dir, 'comparison');
 
 % Salva dati
 data_path = fullfile(res_dir, 'case3_comparison.mat');

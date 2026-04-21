@@ -27,6 +27,14 @@ function save_subplots(fig_handle, fig_dir, prefix, dpi)
         return;
     end
 
+    % Porta la figura in foreground e forza rendering completo
+    % FONDAMENTALE: exportgraphics su axes richiede che la figura sia
+    % renderizzata e visibile prima della chiamata. Senza questo il handle
+    % risulta "invalid" anche se la figura esiste.
+    figure(fig_handle);
+    drawnow;
+    pause(0.05);   % piccola pausa per completare il rendering su Windows
+
     % Forza sfondo bianco per output consistente
     set(fig_handle, 'Color', 'w');
     set(fig_handle, 'InvertHardcopy', 'off');  % i colori sono già espliciti
@@ -99,11 +107,17 @@ function save_subplots(fig_handle, fig_dir, prefix, dpi)
         % ----- Metodo 1: exportgraphics (gestisce yyaxis) -----
         if use_export
             try
-                exportgraphics(ax_target, fpath, ...
-                    'Resolution', dpi, 'BackgroundColor', 'white');
-                saved = true;
-                method = 'exportgraphics';
-            catch
+                % Assicura che la figura sia ancora valida e renderizzata
+                if isvalid(fig_handle)
+                    drawnow;
+                    exportgraphics(ax_target, fpath, ...
+                        'Resolution', dpi, 'BackgroundColor', 'white');
+                    saved = true;
+                    method = 'exportgraphics';
+                end
+            catch me
+                % Ignora silenziosamente e passa al metodo 2
+                % (errore tipico: "figure invalid" dopo print())
             end
         end
 
@@ -117,11 +131,22 @@ function save_subplots(fig_handle, fig_dir, prefix, dpi)
 
                 tmp_fig = figure('Visible', 'off', ...
                     'Position', [100, 100, fig_w, fig_h], ...
-                    'Color', 'w', 'InvertHardcopy', 'on');
+                    'Color', 'w', 'InvertHardcopy', 'off');
 
                 ax_new = copyobj(ax_target, tmp_fig);
                 set(ax_new, 'Position', [0.12, 0.15, 0.78, 0.72]);
                 set(ax_new, 'XTickLabelMode', 'auto');
+                set(ax_new, 'Color', 'white');
+
+                % Copia anche le legende associate all'axes
+                leg = findobj(fig_handle, 'Type', 'Legend');
+                for ll = 1:length(leg)
+                    try
+                        if isequal(leg(ll).Axes, ax_target)
+                            copyobj(leg(ll), tmp_fig);
+                        end
+                    catch; end
+                end
 
                 xl = get(ax_new, 'XLabel');
                 if isempty(get(xl, 'String'))
@@ -134,13 +159,22 @@ function save_subplots(fig_handle, fig_dir, prefix, dpi)
                     title(ax_new, ttl_str, 'FontWeight', 'bold', 'FontSize', 12);
                 end
 
-                print(tmp_fig, fpath, '-dpng', sprintf('-r%d', dpi));
+                drawnow;
+                % Usa exportgraphics sulla figura temporanea se disponibile,
+                % altrimenti print — la figura tmp è nuova quindi non ha
+                % il problema di stato inconsistente
+                if use_export
+                    exportgraphics(tmp_fig, fpath, ...
+                        'Resolution', dpi, 'BackgroundColor', 'white');
+                else
+                    print(tmp_fig, fpath, '-dpng', sprintf('-r%d', dpi));
+                end
                 close(tmp_fig);
                 saved = true;
                 method = 'copyobj';
-            catch
+            catch me2
                 if ~isempty(tmp_fig) && isvalid(tmp_fig)
-                    close(tmp_fig);
+                    try; close(tmp_fig); catch; end
                 end
             end
         end

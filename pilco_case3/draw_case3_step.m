@@ -175,6 +175,7 @@ legend(ax1, 'Location', 'best', 'FontSize', 8);
 grid(ax1, 'on');
 ylim(ax1, [T1_lo, T1_hi]);
 title(ax1, 'T1 misurata vs riferimento — sfondo colorato = gradino Tset');
+xlabel(ax1, 'Tempo [min]');
 
 % =========================================================================
 % SP2 (30%): Q1 [%] sinistro + Q2 [%] destro
@@ -212,10 +213,10 @@ ylabel(ax2, 'Q2 [%]');
 ylim(ax2, [max(0, Q2_min - 3), Q2_max + 3]);
 ax2.YColor = c_Q2;
 
-% BUG2 corretto: legenda senza stringhe vuote
 legend(ax2, 'Location', 'best', 'FontSize', 8);
 grid(ax2, 'on');
 title(ax2, 'Q1 + Q2 disturbo');
+xlabel(ax2, 'Tempo [min]');
 
 % =========================================================================
 % SP3 (30%): Errore e(t) = T1 - r [°C] con area colorata
@@ -243,15 +244,12 @@ ylabel(ax3, 'Errore [°C]');
 legend(ax3, 'Location', 'best', 'FontSize', 8);
 grid(ax3, 'on');
 title(ax3, 'Errore di inseguimento e(t) = T1 − r');
+xlabel(ax3, 'Tempo [min]');
 
 % =========================================================================
 % R1: linkaxes su asse X
 % =========================================================================
 linkaxes([ax1, ax2, ax3], 'x');
-
-% R2: xlabel solo sull'ultimo → rimuovi dagli altri
-set(ax1, 'XTickLabel', []);
-set(ax2, 'XTickLabel', []);
 
 % =========================================================================
 % Stile leggibile: sfondo bianco, contorno nero, titoli marcati
