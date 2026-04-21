@@ -75,6 +75,7 @@ ylabel(ax1, 'Temperatura [°C]');
 legend(ax1, 'Location', 'best', 'FontSize', 8);
 grid(ax1, 'on');
 title(ax1, 'T1 misurata vs riferimento');
+xlabel(ax1, 'Tempo [min]');
 
 % =========================================================================
 % SP2 (30%): Q1 [%] sinistro, Q2 [%] destro
@@ -122,6 +123,7 @@ end
 legend(ax2, 'Location', 'best', 'FontSize', 8);
 grid(ax2, 'on');
 title(ax2, 'Segnali di controllo: Q1 (sinistro) + Q2 disturbo (destro)');
+xlabel(ax2, 'Tempo [min]');
 
 % =========================================================================
 % SP3 (30%): Errore e(t) = T1 - r [°C] con area colorata
@@ -163,9 +165,7 @@ catch
     xlim(ax1, xl); xlim(ax2, xl); xlim(ax3, xl);
 end
 
-% R2: xlabel solo sull'ultimo → rimuovi dagli altri
-set(ax1, 'XTickLabel', []);
-set(ax2, 'XTickLabel', []);
+% xlabel presente su tutti i subplot per export singoli
 
 % =========================================================================
 % Stile leggibile: sfondo bianco, contorno nero, titoli marcati
