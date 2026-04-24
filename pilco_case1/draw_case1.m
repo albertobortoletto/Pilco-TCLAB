@@ -122,7 +122,7 @@ end
 
 legend(ax2, 'Location', 'best', 'FontSize', 8);
 grid(ax2, 'on');
-title(ax2, 'Segnali di controllo: Q1 (sinistro) + Q2 disturbo (destro)');
+title(ax2, 'Segnali di controllo: Q1');
 xlabel(ax2, 'Tempo [min]');
 
 % =========================================================================

@@ -75,7 +75,7 @@ difi = [1 2 3 4];    % GP impara differenze
 % =========================================================================
 
 % Tset_train include 20°C < T1_init=25°C → e_init>0 → GP impara raffreddamento
-Tset_train = [35, 28, 20, 43, 50];   % [°C] — include sottozero per coverage e>0
+Tset_train = [35, 60, 24, 43, 80];   % [°C] — include sottozero per coverage e>0
 nT_train   = length(Tset_train);
 
 % Q2 ciclato tra episodi: range [2,5]% come da specifica
@@ -84,9 +84,9 @@ nQ2        = length(Q2_levels);
 
 % Scalinata di valutazione: 4 gradini MAI VISTI (né valori né sequenza)
 % Contiene sia salita (28→43→55) sia discesa (55→38): testa entrambe le direzioni
-Tset_stair_eval = [28, 43, 55, 38];   % [°C]
+Tset_stair_eval = [28, 55, 30, 74];   % [°C]
 Q2_eval = 2 + 3 * rand();             % [%] — valore random per eval
-H_step_eval     = 20;                 % [step] per gradino: 20×20s = 400s
+H_step_eval     = 30;                 % [step] per gradino: 30×20s = 600s
 
 % Statistiche Tset training (usate per mu0Sim/S0Sim)
 Tset_mean = mean(Tset_train);    % = 35.2°C

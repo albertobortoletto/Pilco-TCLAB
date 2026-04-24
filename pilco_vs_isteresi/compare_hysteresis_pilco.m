@@ -195,7 +195,7 @@ Q1_perc_pilco = u_pilco + maxU;                % [%]
 fprintf('\n=== Simulazione Isteresi ===\n');
 
 % Parametri isteresi
-Q1_on      = 80;    % [%] potenza accensione
+Q1_on      = 100;    % [%] potenza accensione
 Q1_off     = 0;     % [%] potenza spegnimento
 hyst_band  = 4;     % [°C] ampiezza totale banda (±2°C)
 

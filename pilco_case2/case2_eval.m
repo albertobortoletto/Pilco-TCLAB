@@ -157,7 +157,10 @@ Q2_min_c2 = 0;  Q2_max_c2 = 0;
 
 draw_case2(t_full_c2, T1_full_c2, T2_full_c2, ref_full_c2, ...
            Q1_full_c2, Q2_full_c2, cost_full_c2, err_full_c2, ...
-           dt, Tamb_eval, Tset_seg_c2, seg_switch_t_c2, Q2_min_c2, Q2_max_c2);
+           dt, Tamb_eval, Tset_seg_c2, seg_switch_t_c2, Q2_min_c2, Q2_max_c2, ...
+           latent_eval, actions_eval);
+% Argomenti 15-16 (latent_eval, actions_eval): abilitano la riga TOP
+% con un subplot per ogni Tamb — T1 misurata + RMSE + % entro ±2°C per pannello.
 
 % Salva la figura generata da draw_case2 (cerca per Name, non per numero)
 drawnow;  % assicura rendering completo
@@ -177,4 +180,3 @@ end
 
 fprintf('\n=== Valutazione Case 2 completata! ===\n');
 fprintf('Figure salvate in: %s\n', fig_dir);
-

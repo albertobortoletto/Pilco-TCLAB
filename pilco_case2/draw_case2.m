@@ -1,95 +1,205 @@
 function draw_case2(t, T1_traj, T2_traj, ref, u_traj, Q2_traj, ...
                     cost_traj, err_traj, dt, Tamb_segments, ...
-                    Tset_segments, seg_switch_t, Q2_min, Q2_max)
-% draw_case2  Visualizzazione Caso 2: Tset FISSO, Tamb VARIABILE tra segmenti.
+                    Tset_segments, seg_switch_t, Q2_min, Q2_max, ...
+                    latent_eval, actions_eval)
+% draw_case2  Visualizzazione Caso 2: Tset FISSO, Tamb VARIABILE.
 %
-% Signature:
-%   draw_case2(t, T1_traj, T2_traj, ref, u_traj, Q2_traj,
-%              cost_traj, err_traj, dt, Tamb_segments,
-%              Tset_segments, seg_switch_t, Q2_min, Q2_max)
+% LAYOUT:
+%   Riga TOP  : un subplot per ogni Tamb (T1 vs riferimento, metriche inline)
+%   Riga BOT1 : Q1 [%] (sinistro) + Q2 [%] (destro) — segnale cucito
+%   Riga BOT2 : Errore e(t) = T1 - r [°C]
+%   Riga BOT3 : Costo lossSat [0,1] + movmean(8)
 %
-% Subplot (4 righe):
-%   SP1 (35%): T1 vs riferimento, con bande colorate per segmento Tamb
-%   SP2 (25%): Q1 [%] (sinistro) + Q2 [%] (destro) con xline segmenti
-%   SP3 (20%): Errore e(t) = T1 - r [°C] con yline ±2°C
-%   SP4 (20%): Costo lossSat [0,1] + movmean(8)
-%
-% Caso 2: Tset fisso, Tamb variabile → xline ai cambi di segmento.
+% Argomenti opzionali (15-16):
+%   latent_eval   cell(1,nSeg): latent{te} = (H+1)×3  [T1, T2, Tamb]
+%   actions_eval  cell(1,nSeg): Q1 già in [0,100]%,   lunghezza H o H+1
+%   Se assenti, la riga TOP non viene disegnata.
 
-% =========================================================================
-% R7: Colori definiti come variabili locali
-% =========================================================================
-c_T1   = [0.00, 0.45, 0.74];   % blu
-c_ref  = [0.85, 0.13, 0.13];   % rosso
-c_Q1   = [0.00, 0.45, 0.74];   % blu
-c_Q2   = [0.55, 0.00, 0.75];   % viola
-c_err  = [0.85, 0.33, 0.10];   % arancione
-c_cost = [0.47, 0.67, 0.19];   % verde
-c_band = [0.80, 0.90, 0.80];   % banda ±2°C
-c_xline = [0.50, 0.50, 0.50];  % grigio per xline
+% -------------------------------------------------------------------------
+% Argomenti opzionali
+% -------------------------------------------------------------------------
+has_individual = nargin >= 16 && ~isempty(latent_eval) && ~isempty(actions_eval);
 
-% Colori segmenti (pastello per bande di sfondo)
-seg_colors = [0.85, 0.92, 1.00;    % azzurro chiaro
-              1.00, 0.92, 0.85;    % arancione chiaro
-              0.85, 1.00, 0.85;    % verde chiaro
-              1.00, 0.85, 1.00;    % rosa chiaro
-              1.00, 1.00, 0.85;    % giallo chiaro
-              0.90, 0.85, 1.00];   % lavanda
+% -------------------------------------------------------------------------
+% Colori
+% -------------------------------------------------------------------------
+c_T1    = [0.00, 0.45, 0.74];
+c_ref   = [0.85, 0.13, 0.13];
+c_Q1    = [0.00, 0.45, 0.74];
+c_Q2    = [0.55, 0.00, 0.75];
+c_err   = [0.85, 0.33, 0.10];
+c_cost  = [0.47, 0.67, 0.19];
+c_band  = [0.80, 0.90, 0.80];
+c_xline = [0.50, 0.50, 0.50];
 
-% =========================================================================
-% Preparazione dati
-% =========================================================================
-t_min = t(:) / 60;                      % [min]
-N_pts = length(t_min);
-nSeg  = length(Tamb_segments);
+seg_colors = [0.85, 0.92, 1.00;
+              1.00, 0.92, 0.85;
+              0.85, 1.00, 0.85;
+              1.00, 0.85, 1.00;
+              1.00, 1.00, 0.85;
+              0.90, 0.85, 1.00];
 
-% Tempi di switch in minuti [min]
-seg_switch_min = seg_switch_t(:) / 60;   % [min]
-
-% Assicura che i vettori siano colonna
-Q1_perc  = u_traj(:);                    % [%]
+% -------------------------------------------------------------------------
+% Dati cuciti
+% -------------------------------------------------------------------------
+t_min          = t(:) / 60;
+nSeg           = length(Tamb_segments);
+seg_switch_min = seg_switch_t(:) / 60;
+Q1_perc  = u_traj(:);
 Q2_vec   = Q2_traj(:);
 err_vec  = err_traj(:);
 cost_vec = cost_traj(:);
 ref_vec  = ref(:);
 T1_vec   = T1_traj(:);
+Tset_val = Tset_segments(1);
 
-% =========================================================================
+% -------------------------------------------------------------------------
 % Figura
-% =========================================================================
-% R8: NumberTitle off, Name descrittivo
-fig = figure('NumberTitle', 'off', 'Name', 'Caso 2 — Tset fisso, Tamb variabile', ...
-             'Color', 'w');
-clf(fig);
-% R10: Position [80, 50, 1100, 850]
-set(fig, 'Position', [80, 50, 1100, 850]);
-set(fig, 'InvertHardcopy', 'off');  % non invertire: i colori sono già espliciti
+% -------------------------------------------------------------------------
+fig = figure('NumberTitle', 'off', ...
+             'Name',        'Caso 2 — Tset fisso, Tamb variabile', ...
+             'Color',       'w', ...
+             'Position',    [60, 40, 1200, 950]);
+set(fig, 'InvertHardcopy', 'off');
+
+% -------------------------------------------------------------------------
+% Posizioni normalizzate
+%
+%   Con riga TOP:
+%     top  : y ∈ [0.67, 0.95]  h = 0.28
+%     bot1 : y ∈ [0.47, 0.62]  h = 0.15   Q1/Q2
+%     bot2 : y ∈ [0.27, 0.43]  h = 0.16   errore
+%     bot3 : y ∈ [0.04, 0.22]  h = 0.18   costo
+%
+%   Senza riga TOP (fallback): 4 subplot uniformi
+% -------------------------------------------------------------------------
+left_m = 0.07;
+righ_m = 0.96;
+full_w = righ_m - left_m;
+
+if has_individual
+    bot_y    = [0.47, 0.27, 0.04];
+    bot_h    = [0.15, 0.16, 0.18];
+    top_y    = 0.67;
+    top_h    = 0.27;
+else
+    bot_y    = [0.74, 0.50, 0.26];
+    bot_h    = [0.20, 0.20, 0.20];
+    top_y    = [];
+    top_h    = [];
+end
 
 % =========================================================================
-% Helper: disegna bande colorate di sfondo per ogni segmento
+% RIGA SUPERIORE — subplot individuali per Tamb
+% =========================================================================
+if has_individual
+    gap_sp = 0.012;
+    w_sp   = (full_w - gap_sp*(nSeg-1)) / nSeg;
+
+    % Calcola limiti Y globali per rendere i pannelli confrontabili
+    all_T1 = [];
+    for ss = 1:nSeg
+        all_T1 = [all_T1; latent_eval{ss}(:,1)];
+    end
+    y_lo_g = min(all_T1) - 4;
+    y_hi_g = max(all_T1) + 10;
+
+    annotation(fig, 'textbox', [left_m, 0.955, full_w, 0.028], ...
+               'String', 'T_1 misurata per ogni T_{amb} di valutazione', ...
+               'FontSize', 11, 'FontWeight', 'bold', 'Color', 'k', ...
+               'HorizontalAlignment', 'center', 'EdgeColor', 'none', ...
+               'BackgroundColor', 'none');
+
+    for ss = 1:nSeg
+        Tamb_ss = Tamb_segments(ss);
+        lt_ss   = latent_eval{ss};
+        T1_ss   = lt_ss(:, 1);
+        n_ss    = size(lt_ss, 1);
+        t_ss    = (0:n_ss-1)' * dt / 60;
+        ref_ss  = Tset_val * ones(n_ss, 1);
+        err_ss  = T1_ss - ref_ss;
+
+        % Q1: allinea a n_ss punti
+        Q1_ss = actions_eval{ss}(:);
+        if length(Q1_ss) < n_ss
+            Q1_ss = [Q1_ss(1); Q1_ss];
+        end
+        Q1_ss = Q1_ss(1:n_ss);
+
+        x_pos  = left_m + (ss-1)*(w_sp + gap_sp);
+        ax_top = axes('Position', [x_pos, top_y, w_sp, top_h], ...
+                      'Parent', fig);
+        hold(ax_top, 'on');
+
+        % Sfondo tenue con il colore del segmento
+        ci = mod(ss-1, size(seg_colors,1)) + 1;
+        set(ax_top, 'Color', seg_colors(ci,:)*0.18 + 0.82);
+
+        % Banda ±2°C
+        t_p = [t_ss; flipud(t_ss)];
+        r_p = [ref_ss-2; flipud(ref_ss+2)];
+        patch(ax_top, t_p, r_p, c_band, 'EdgeColor','none', ...
+              'FaceAlpha', 0.50, 'HandleVisibility','off');
+
+        % Riferimento
+        plot(ax_top, t_ss, ref_ss, '--', 'Color', c_ref, 'LineWidth', 1.6, ...
+             'DisplayName', sprintf('T_{set}=%.0f°C', Tset_val));
+
+        % T1
+        plot(ax_top, t_ss, T1_ss, '-', 'Color', c_T1, 'LineWidth', 2.2, ...
+             'DisplayName', 'T_1');
+
+        % Metriche inline (angolo in basso a destra)
+        rmse_ss = sqrt(mean(err_ss.^2));
+        pct_ss  = 100 * mean(abs(err_ss) < 2);
+        text(ax_top, t_ss(end)*0.97, y_lo_g + 0.8, ...
+             sprintf('RMSE=%.1f°C\n%d%% in ±2°C', rmse_ss, round(pct_ss)), ...
+             'HorizontalAlignment', 'right', 'FontSize', 7.5, 'Color', [0.15 0.15 0.15], ...
+             'BackgroundColor', 'w', 'EdgeColor', [0.75 0.75 0.75]);
+
+        title(ax_top, sprintf('T_{amb} = %.0f°C', Tamb_ss), ...
+              'FontSize', 10, 'FontWeight', 'bold', 'Color', 'k');
+        ylim(ax_top, [y_lo_g, y_hi_g]);
+
+        % xlabel solo sull'ultimo, ylabel solo sul primo
+        if ss == nSeg
+            xlabel(ax_top, 'Tempo [min]', 'FontSize', 9, 'Color', 'k');
+        else
+            set(ax_top, 'XTickLabel', []);
+        end
+        if ss == 1
+            ylabel(ax_top, 'T_1 [°C]', 'FontSize', 9, 'Color', 'k');
+            legend(ax_top, 'Location', 'southeast', 'FontSize', 7.5);
+        else
+            set(ax_top, 'YTickLabel', []);
+        end
+
+        grid(ax_top, 'on');
+        set(ax_top, 'XColor', 'k', 'YColor', 'k', ...
+                    'GridColor', [0.15 0.15 0.15], 'GridAlpha', 0.25);
+        box(ax_top, 'on');
+    end
+end
+
+% =========================================================================
+% Helper: bande sfondo cucito
 % =========================================================================
     function draw_seg_bands(ax, y_lo, y_hi)
         for ss = 1:nSeg
-            if ss == 1
-                t_start = t_min(1);
-            else
-                t_start = seg_switch_min(ss - 1);
-            end
+            if ss == 1, ts = t_min(1); else, ts = seg_switch_min(ss-1); end
             if ss < nSeg && ss <= length(seg_switch_min)
-                t_end = seg_switch_min(ss);
+                te = seg_switch_min(ss);
             else
-                t_end = t_min(end);
+                te = t_min(end);
             end
-            ci = mod(ss - 1, size(seg_colors, 1)) + 1;
-            patch(ax, [t_start, t_end, t_end, t_start], ...
-                  [y_lo, y_lo, y_hi, y_hi], seg_colors(ci, :), ...
-                  'FaceAlpha', 0.25, 'EdgeColor', 'none', ...
-                  'HandleVisibility', 'off');
+            ci = mod(ss-1, size(seg_colors,1)) + 1;
+            patch(ax, [ts,te,te,ts], [y_lo,y_lo,y_hi,y_hi], seg_colors(ci,:), ...
+                  'FaceAlpha',0.18,'EdgeColor','none','HandleVisibility','off');
         end
     end
 
 % =========================================================================
-% Helper: disegna xline ai cambi di segmento (R4: xline grigio ':')
+% Helper: xline ai cambi di segmento
 % =========================================================================
     function draw_seg_xlines(ax)
         for ss = 1:length(seg_switch_min)
@@ -99,187 +209,124 @@ set(fig, 'InvertHardcopy', 'off');  % non invertire: i colori sono già esplicit
     end
 
 % =========================================================================
-% SP1 (35%): T1 vs riferimento con bande di sfondo per Tamb
+% BOT1 — Q1 + Q2 (cucito)
 % =========================================================================
-ax1 = subplot(4, 1, 1); hold on;
-
-T1_lo = min([T1_vec; ref_vec]) - 8;
-T1_hi = max([T1_vec; ref_vec]) + 12;
-draw_seg_bands(ax1, T1_lo, T1_hi);
-draw_seg_xlines(ax1);
-
-% Etichette "Tamb=X°C" centrate nella banda di ogni segmento
-for ss = 1:nSeg
-    if ss == 1
-        t_s = t_min(1);
-    else
-        t_s = seg_switch_min(ss - 1);
-    end
-    if ss < nSeg && ss <= length(seg_switch_min)
-        t_e = seg_switch_min(ss);
-    else
-        t_e = t_min(end);
-    end
-    t_mid = (t_s + t_e) / 2;
-    text(ax1, t_mid, T1_hi - 3, sprintf('T_{amb}=%.0f°C', Tamb_segments(ss)), ...
-         'HorizontalAlignment', 'center', 'FontSize', 8, ...
-         'Color', [0.3, 0.3, 0.3], 'FontWeight', 'bold');
-end
-
-% Riferimento tratteggiato rosso
-plot(ax1, t_min, ref_vec, '--', 'Color', c_ref, 'LineWidth', 1.8, ...
-     'DisplayName', sprintf('Rif. T_{set}'));
-
-% T1 misurata
-plot(ax1, t_min, T1_vec, '-', 'Color', c_T1, 'LineWidth', 2.5, ...
-     'DisplayName', 'T1 misurata');
-
-ylabel(ax1, 'Temperatura [°C]');
-legend(ax1, 'Location', 'best', 'FontSize', 8);
-grid(ax1, 'on');
-ylim(ax1, [T1_lo, T1_hi]);
-title(ax1, 'T1 misurata vs riferimento — bande colorate = segmento Tamb');
-xlabel(ax1, 'Tempo [min]');
-
-% =========================================================================
-% SP2 (25%): Q1 [%] sinistro + Q2 [%] destro
-% =========================================================================
-ax2 = subplot(4, 1, 2); hold on;
-
+ax2 = axes('Position', [left_m, bot_y(1), full_w, bot_h(1)], ...
+           'Color', 'w', 'Parent', fig);
+hold(ax2, 'on');
 draw_seg_xlines(ax2);
 
-% --- Asse sinistro: Q1 ---
 yyaxis(ax2, 'left');
-stairs(ax2, t_min(1:length(Q1_perc)), Q1_perc, '-', ...
-       'Color', c_Q1, 'LineWidth', 2.0, 'DisplayName', 'Q1 [%]');
-yline(ax2, 0,   ':', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.8, ...
-      'HandleVisibility', 'off');
-yline(ax2, 100, ':', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.8, ...
-      'HandleVisibility', 'off');
-ylabel(ax2, 'Q1 [%]');
+stairs(ax2, t_min(1:length(Q1_perc)), Q1_perc, '-', 'Color', c_Q1, ...
+       'LineWidth', 2.0, 'DisplayName', 'Q1 [%]');
+yline(ax2, 0,   ':', 'Color',[0.5 0.5 0.5], 'LineWidth',0.8, 'HandleVisibility','off');
+yline(ax2, 100, ':', 'Color',[0.5 0.5 0.5], 'LineWidth',0.8, 'HandleVisibility','off');
+ylabel(ax2, 'Q1 [%]', 'FontSize',10, 'Color',c_Q1);
 ylim(ax2, [-5, 110]);
 ax2.YColor = c_Q1;
 
-% --- Asse destro: Q2 (R5) ---
 yyaxis(ax2, 'right');
-scatter(ax2, t_min(1:length(Q2_vec)), Q2_vec, 12, c_Q2, 'filled', ...
-        'DisplayName', 'Q2 campioni', 'MarkerFaceAlpha', 0.5);
+scatter(ax2, t_min(1:length(Q2_vec)), Q2_vec, 10, c_Q2, 'filled', ...
+        'DisplayName','Q2 campioni','MarkerFaceAlpha',0.45);
 if length(Q2_vec) >= 5
-    Q2_smooth = movmean(Q2_vec, 5);
-    plot(ax2, t_min(1:length(Q2_vec)), Q2_smooth, '-', 'Color', c_Q2, ...
-         'LineWidth', 1.8, 'DisplayName', 'Q2 movmean(5)');
+    plot(ax2, t_min(1:length(Q2_vec)), movmean(Q2_vec,5), '-', ...
+         'Color',c_Q2,'LineWidth',1.6,'DisplayName','Q2 media');
 end
-yline(ax2, Q2_min, '--', 'Color', c_Q2 * 0.7, 'LineWidth', 1.0, ...
-      'HandleVisibility', 'off');
-yline(ax2, Q2_max, '--', 'Color', c_Q2 * 0.7, 'LineWidth', 1.0, ...
-      'HandleVisibility', 'off');
-ylabel(ax2, 'Q2 [%]');
-ylim(ax2, [max(0, Q2_min - 3), Q2_max + 3]);
+ylabel(ax2, 'Q2 [%]', 'FontSize',10, 'Color',c_Q2);
+ylim(ax2, [max(0,Q2_min-2), Q2_max+3]);
 ax2.YColor = c_Q2;
 
-legend(ax2, 'Location', 'best', 'FontSize', 8);
+% Etichette Tamb sopra ogni segmento
+yyaxis(ax2, 'left');
+for ss = 1:nSeg
+    if ss == 1, ts2 = t_min(1); else, ts2 = seg_switch_min(ss-1); end
+    if ss < nSeg && ss <= length(seg_switch_min), te2 = seg_switch_min(ss);
+    else, te2 = t_min(end); end
+    text(ax2, (ts2+te2)/2, 104, sprintf('T_{amb}=%.0f°C', Tamb_segments(ss)), ...
+         'HorizontalAlignment','center','FontSize',7.5, ...
+         'Color',[0.25 0.25 0.25],'FontWeight','bold');
+end
+
+legend(ax2, 'Location','best','FontSize',8);
 grid(ax2, 'on');
-title(ax2, 'Q1 + Q2 disturbo');
-xlabel(ax2, 'Tempo [min]');
+title(ax2, 'Q1 controllo + Q2 disturbo', 'FontSize',11,'FontWeight','bold','Color','k');
+set(ax2, 'XTickLabel',[], 'XColor','k', 'GridColor',[0.15 0.15 0.15],'GridAlpha',0.3);
 
 % =========================================================================
-% SP3 (20%): Errore e(t) = T1 - r [°C]
+% BOT2 — Errore (cucito)
 % =========================================================================
-ax3 = subplot(4, 1, 3); hold on;
-
+ax3 = axes('Position', [left_m, bot_y(2), full_w, bot_h(2)], ...
+           'Color', 'w', 'Parent', fig);
+hold(ax3, 'on');
+e_lo = min(err_vec) - 1;  e_hi = max(err_vec) + 1;
+draw_seg_bands(ax3, e_lo, e_hi);
 draw_seg_xlines(ax3);
 
-% Area errore
 area(ax3, t_min(1:length(err_vec)), err_vec, ...
-     'FaceColor', c_err, 'FaceAlpha', 0.35, 'EdgeColor', c_err, ...
-     'LineWidth', 1.5, 'DisplayName', 'e(t) = T1 − r');
+     'FaceColor',c_err,'FaceAlpha',0.28,'EdgeColor',c_err, ...
+     'LineWidth',1.3,'DisplayName','e(t) = T1 − r');
+yline(ax3,  0, '-k',  'LineWidth',1.0, 'HandleVisibility','off');
+yline(ax3,  2, '--', 'Color',[0.0 0.6 0.1],'LineWidth',1.2,'DisplayName','±2°C');
+yline(ax3, -2, '--', 'Color',[0.0 0.6 0.1],'LineWidth',1.2,'HandleVisibility','off');
 
-% yline a 0
-yline(ax3, 0, '-k', 'LineWidth', 1.0, 'HandleVisibility', 'off');
-
-% yline ±2°C
-yline(ax3, 2,  '--', 'Color', [0.0, 0.6, 0.1], 'LineWidth', 1.2, ...
-      'DisplayName', '±2°C');
-yline(ax3, -2, '--', 'Color', [0.0, 0.6, 0.1], 'LineWidth', 1.2, ...
-      'HandleVisibility', 'off');
-
-ylabel(ax3, 'Errore [°C]');
-legend(ax3, 'Location', 'best', 'FontSize', 8);
+ylabel(ax3, 'Errore [°C]','FontSize',10,'Color','k');
+legend(ax3, 'Location','best','FontSize',8);
 grid(ax3, 'on');
-title(ax3, 'Errore di inseguimento e(t) = T1 − r');
-xlabel(ax3, 'Tempo [min]');
+title(ax3, 'Errore di inseguimento e(t) = T1 − r','FontSize',11,'FontWeight','bold','Color','k');
+set(ax3, 'XTickLabel',[],'XColor','k','YColor','k', ...
+         'GridColor',[0.15 0.15 0.15],'GridAlpha',0.3);
 
 % =========================================================================
-% SP4 (20%): Costo lossSat [0,1] + movmean(8)
+% BOT3 — Costo lossSat (cucito)
 % =========================================================================
-ax4 = subplot(4, 1, 4); hold on;
-
+ax4 = axes('Position', [left_m, bot_y(3), full_w, bot_h(3)], ...
+           'Color', 'w', 'Parent', fig);
+hold(ax4, 'on');
 draw_seg_xlines(ax4);
 
-% Costo istantaneo
 plot(ax4, t_min(1:length(cost_vec)), cost_vec, '-', ...
-     'Color', [c_cost, 0.4], 'LineWidth', 1.0, ...
-     'DisplayName', 'Costo lossSat');
-
-% Media mobile costo
+     'Color',[c_cost, 0.30],'LineWidth',0.9,'DisplayName','c(t) istantaneo');
 if length(cost_vec) >= 8
-    cost_smooth = movmean(cost_vec, 8);
-    plot(ax4, t_min(1:length(cost_vec)), cost_smooth, '-', ...
-         'Color', c_cost, 'LineWidth', 2.2, ...
-         'DisplayName', 'movmean(8)');
+    plot(ax4, t_min(1:length(cost_vec)), movmean(cost_vec,8), '-', ...
+         'Color',c_cost,'LineWidth',2.2,'DisplayName','movmean(8)');
 end
 
-xlabel(ax4, 'Tempo [min]');
-ylabel(ax4, 'Costo lossSat [0,1]');
+% RMSE e % entro ±2°C sull'intero episodio
+rmse_tot = sqrt(mean(err_vec.^2));
+pct_tot  = 100 * mean(abs(err_vec) < 2);
+text(ax4, t_min(end)*0.98, 0.90, ...
+     sprintf('RMSE = %.2f°C  |  %d%% step entro ±2°C', rmse_tot, round(pct_tot)), ...
+     'HorizontalAlignment','right','FontSize',8.5,'Color','k', ...
+     'BackgroundColor','w','EdgeColor',[0.7 0.7 0.7]);
+
+xlabel(ax4, 'Tempo [min]','FontSize',10,'Color','k');
+ylabel(ax4, 'Costo lossSat','FontSize',10,'Color','k');
 ylim(ax4, [0, 1.05]);
-legend(ax4, 'Location', 'best', 'FontSize', 8);
+legend(ax4, 'Location','best','FontSize',8);
 grid(ax4, 'on');
-title(ax4, 'Costo lossSat');
+title(ax4, 'Costo lossSat — segnale cucito','FontSize',11,'FontWeight','bold','Color','k');
+set(ax4, 'XColor','k','YColor','k', ...
+         'GridColor',[0.15 0.15 0.15],'GridAlpha',0.3);
 
-% =========================================================================
-% R1: linkaxes su asse X
-% =========================================================================
-linkaxes([ax1, ax2, ax3, ax4], 'x');
-
-% R2: xlabel solo sull'ultimo → rimuovi dagli altri
-set(ax1, 'XTickLabel', []);
-set(ax2, 'XTickLabel', []);
-set(ax3, 'XTickLabel', []);
-
-% =========================================================================
-% Stile leggibile: sfondo bianco, contorno nero, titoli marcati
-% =========================================================================
-for aa = [ax1, ax2, ax3, ax4]
-    set(aa, 'Color', 'w');                          % sfondo bianco
-    set(aa, 'XColor', 'k');                          % asse X nero
-    set(aa, 'GridColor', [0.15 0.15 0.15]);
-    set(aa, 'GridAlpha', 0.3);
-    set(get(aa, 'Title'), 'Color', 'k', 'FontWeight', 'bold', 'FontSize', 12);
-    set(get(aa, 'XLabel'), 'Color', 'k', 'FontSize', 10);
-    set(get(aa, 'YLabel'), 'Color', 'k', 'FontSize', 10);
-end
-% YColor nero per axes senza yyaxis
-set(ax1, 'YColor', 'k');
-set(ax3, 'YColor', 'k');
-set(ax4, 'YColor', 'k');
-% ax2: i colori Y sinistro/destro sono già fissati per Q1/Q2
-
-% Legende con sfondo bianco e testo nero
-for aa = [ax1, ax2, ax3, ax4]
-    lg = findobj(aa, 'Type', 'Legend');
+% -------------------------------------------------------------------------
+% Legende bianche
+% -------------------------------------------------------------------------
+for aa = [ax2, ax3, ax4]
+    lg = findobj(aa, 'Type','Legend');
     if ~isempty(lg)
-        set(lg, 'TextColor', 'k', 'EdgeColor', [0.5 0.5 0.5], 'Color', 'w');
+        set(lg, 'TextColor','k','EdgeColor',[0.5 0.5 0.5],'Color','w');
     end
 end
 
-% R3: sgtitle con info essenziali
-Tamb_str = strjoin(arrayfun(@(x) sprintf('%.0f', x), Tamb_segments, ...
-           'UniformOutput', false), ', ');
-sgtitle(sprintf('Caso 2 — Tamb variabile [%s]°C | dt = %ds | Q2 \\in [%.0f, %.0f]%%', ...
-        Tamb_str, dt, Q2_min, Q2_max), ...
-        'FontWeight', 'bold', 'FontSize', 14, 'Color', 'k');
+% -------------------------------------------------------------------------
+% sgtitle globale
+% -------------------------------------------------------------------------
+Tamb_str = strjoin(arrayfun(@(x) sprintf('%.0f',x), Tamb_segments, ...
+           'UniformOutput',false), ', ');
+sgtitle(sprintf(['Caso 2 — T_{set} = %.0f°C  |  T_{amb} = [%s]°C  |  ' ...
+                 'dt = %ds  |  Q2 \\in [%.0f, %.0f]%%'], ...
+        Tset_val, Tamb_str, dt, Q2_min, Q2_max), ...
+        'FontWeight','bold','FontSize',13,'Color','k');
 
-% R9: drawnow
 drawnow;
-
 end

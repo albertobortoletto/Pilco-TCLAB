@@ -85,7 +85,7 @@ difi = [1 2 3];    % GP impara differenze: ΔT1, ΔT2, ΔTamb
 
 Tamb_train = [25, 35, 40, 30];   % Tamb viste durante il training [°C]
 nT_train   = length(Tamb_train);
-nT_eval    = length(Tamb_eval);
+%nT_eval    = length(Tamb_eval);
 
 % Statistiche Tamb di training (usate per mu0Sim/S0Sim della simulazione interna)
 Tamb_mean = mean(Tamb_train);     % ≈ 32.5°C
