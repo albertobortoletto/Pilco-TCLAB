@@ -3,12 +3,11 @@ function draw_case1(t, T1_traj, T2_traj, ref, u_traj, Q2_traj, ...
 % draw_case1  Visualizzazione Caso 1: Tset FISSO, Tamb FISSA.
 %
 % Signature:
-%   draw_case1(t, T1_traj, T2_traj, ref, u_traj, Q2_traj,
-%              cost_traj, err_traj, dt, Tamb, Tset, Q2_min, Q2_max)
+%   draw_case1(t, T1_traj, T2_traj, ref, u_traj, Q2_traj,Tset, Tamb, dt), ...
 %
 % Subplot (3 righe):
 %   SP1 (40%): T1 misurata vs riferimento r(t) [°C]
-%   SP2 (30%): Q1 [%] (sinistro) + Q2 [%] (destro)
+% SP2 (30%): Q1 [%] — azione di controllo heater 1
 %   SP3 (30%): Errore e(t) = T1 - r [°C] con area colorata
 %
 % Caso 1: Tset e Tamb fissi → nessuna linea verticale di cambio.
@@ -19,7 +18,7 @@ function draw_case1(t, T1_traj, T2_traj, ref, u_traj, Q2_traj, ...
 c_T1   = [0.00, 0.45, 0.74];   % blu
 c_ref  = [0.85, 0.13, 0.13];   % rosso
 c_Q1   = [0.00, 0.45, 0.74];   % blu (stairs)
-c_Q2   = [0.55, 0.00, 0.75];   % viola
+% c_Q2 rimosso: Q2 non mostrato nel Caso 1
 c_err  = [0.85, 0.33, 0.10];   % arancione
 c_cost = [0.47, 0.67, 0.19];   % verde
 c_band = [0.80, 0.90, 0.80];   % verde chiaro semitrasparente
@@ -78,12 +77,12 @@ title(ax1, 'T1 misurata vs riferimento');
 xlabel(ax1, 'Tempo [min]');
 
 % =========================================================================
-% SP2 (30%): Q1 [%] sinistro, Q2 [%] destro
+% SP2 (30%): Q1 [%] sinistro
 % =========================================================================
 ax2 = subplot(3, 1, 2); hold on;
 
 % --- Asse sinistro: Q1 ---
-yyaxis(ax2, 'left');
+% asse singolo: solo Q1, nessun yyaxis
 stairs(ax2, t_min(1:length(Q1_perc)), Q1_perc, '-', ...
        'Color', c_Q1, 'LineWidth', 2.0, 'DisplayName', 'Q1 [%]');
 yline(ax2, 0,   ':', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.8, ...
@@ -92,33 +91,9 @@ yline(ax2, 100, ':', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.8, ...
       'HandleVisibility', 'off');
 ylabel(ax2, 'Q1 [%]');
 ylim(ax2, [-5, 110]);
-ax2.YColor = c_Q1;
+ax2.YColor = c_Q1;   % asse unico, nessun yyaxis
 
-% --- Asse destro: Q2 ---
-Q2_vec = Q2_traj(:);
-has_Q2 = any(Q2_vec ~= 0) || (Q2_max > Q2_min);   % Q2 significativo?
 
-if has_Q2
-    yyaxis(ax2, 'right');
-    scatter(ax2, t_min(1:length(Q2_vec)), Q2_vec, 12, c_Q2, 'filled', ...
-            'DisplayName', 'Q2 campioni', 'MarkerFaceAlpha', 0.5);
-    % Media mobile Q2
-    if length(Q2_vec) >= 5
-        Q2_smooth = movmean(Q2_vec, 5);
-        plot(ax2, t_min(1:length(Q2_vec)), Q2_smooth, '-', 'Color', c_Q2, ...
-             'LineWidth', 1.8, 'DisplayName', 'Q2 movmean(5)');
-    end
-    yline(ax2, Q2_min, '--', 'Color', c_Q2 * 0.7, 'LineWidth', 1.0, ...
-          'Label', sprintf('Q2_{min}=%.0f%%', Q2_min), ...
-          'HandleVisibility', 'off');
-    yline(ax2, Q2_max, '--', 'Color', c_Q2 * 0.7, 'LineWidth', 1.0, ...
-          'Label', sprintf('Q2_{max}=%.0f%%', Q2_max), ...
-          'HandleVisibility', 'off');
-    ylabel(ax2, 'Q2 [%]');
-    ylim(ax2, [max(0, Q2_min - 3), Q2_max + 3]);
-    ax2.YColor = c_Q2;
-    yyaxis(ax2, 'left');   % torna a sinistra per linkaxes
-end
 
 legend(ax2, 'Location', 'best', 'FontSize', 8);
 grid(ax2, 'on');
@@ -182,7 +157,7 @@ end
 % YColor nero per axes senza yyaxis
 set(ax1, 'YColor', 'k');
 set(ax3, 'YColor', 'k');
-% ax2: i colori Y sinistro/destro sono già fissati per Q1/Q2
+% ax2: asse unico Q1, YColor gia' impostato sopra
 
 % Legende con sfondo bianco
 for aa = [ax1, ax2, ax3]
@@ -193,8 +168,8 @@ for aa = [ax1, ax2, ax3]
 end
 
 % R3: sgtitle con info essenziali
-sgtitle(sprintf('Caso 1 — T_{set} = %.0f°C | T_{amb} = %.0f°C | dt = %ds | Q2 \\in [%.0f, %.0f]%%', ...
-        Tset, Tamb, dt, Q2_min, Q2_max), ...
+sgtitle(sprintf('Caso 1 — T_{set} = %.0f°C | T_{amb} = %.0f°C | dt = %ds', ...
+        Tset, Tamb, dt), ...
         'FontWeight', 'bold', 'FontSize', 14, 'Color', 'k');
 
 % R9: drawnow — force rendering
