@@ -59,29 +59,30 @@ Tset_val = Tset_segments(1);
 fig = figure('NumberTitle', 'off', ...
              'Name',        'Caso 2 — Tset fisso, Tamb variabile', ...
              'Color',       'w', ...
-             'Position',    [60, 40, 1200, 950]);
+             'Position',    [40, 10, 1250, 1100]);
 set(fig, 'InvertHardcopy', 'off');
 
 % -------------------------------------------------------------------------
-% Posizioni normalizzate
+% Posizioni normalizzate — layout con gap per titoli e xlabel
 %
-%   Con riga TOP:
-%     top  : y ∈ [0.67, 0.95]  h = 0.28
-%     bot1 : y ∈ [0.47, 0.62]  h = 0.15   Q1/Q2
-%     bot2 : y ∈ [0.27, 0.43]  h = 0.16   errore
-%     bot3 : y ∈ [0.04, 0.22]  h = 0.18   costo
-%
-%   Senza riga TOP (fallback): 4 subplot uniformi
+%   sgtitle : ~0.96
+%   top     : y=0.72  h=0.21  → [0.72, 0.93]   T1 per Tamb
+%   (gap 0.06 per xlabel top + titolo bot1)
+%   bot1    : y=0.47  h=0.14  → [0.47, 0.61]   Q1/Q2
+%   (gap 0.05 per titolo bot2)
+%   bot2    : y=0.26  h=0.14  → [0.26, 0.40]   errore
+%   (gap 0.05 per titolo bot3)
+%   bot3    : y=0.05  h=0.14  → [0.05, 0.19]   costo
 % -------------------------------------------------------------------------
 left_m = 0.07;
 righ_m = 0.96;
 full_w = righ_m - left_m;
 
 if has_individual
-    bot_y    = [0.47, 0.27, 0.04];
-    bot_h    = [0.15, 0.16, 0.18];
-    top_y    = 0.67;
-    top_h    = 0.27;
+    bot_y    = [0.47, 0.26, 0.05];
+    bot_h    = [0.14, 0.14, 0.14];
+    top_y    = 0.72;
+    top_h    = 0.21;
 else
     bot_y    = [0.74, 0.50, 0.26];
     bot_h    = [0.20, 0.20, 0.20];
@@ -93,7 +94,7 @@ end
 % RIGA SUPERIORE — subplot individuali per Tamb
 % =========================================================================
 if has_individual
-    gap_sp = 0.012;
+    gap_sp = 0.018;    % gap aumentato tra pannelli
     w_sp   = (full_w - gap_sp*(nSeg-1)) / nSeg;
 
     % Calcola limiti Y globali per rendere i pannelli confrontabili
@@ -101,14 +102,8 @@ if has_individual
     for ss = 1:nSeg
         all_T1 = [all_T1; latent_eval{ss}(:,1)];
     end
-    y_lo_g = min(all_T1) - 4;
-    y_hi_g = max(all_T1) + 10;
-
-    annotation(fig, 'textbox', [left_m, 0.955, full_w, 0.028], ...
-               'String', 'T_1 misurata per ogni T_{amb} di valutazione', ...
-               'FontSize', 11, 'FontWeight', 'bold', 'Color', 'k', ...
-               'HorizontalAlignment', 'center', 'EdgeColor', 'none', ...
-               'BackgroundColor', 'none');
+    y_lo_g = min(all_T1) - 3;
+    y_hi_g = max(all_T1) + 4;
 
     for ss = 1:nSeg
         Tamb_ss = Tamb_segments(ss);
@@ -143,40 +138,40 @@ if has_individual
 
         % Riferimento
         plot(ax_top, t_ss, ref_ss, '--', 'Color', c_ref, 'LineWidth', 1.6, ...
-             'DisplayName', sprintf('T_{set}=%.0f°C', Tset_val));
+             'DisplayName', sprintf('T_{set}=%g', Tset_val));
 
         % T1
         plot(ax_top, t_ss, T1_ss, '-', 'Color', c_T1, 'LineWidth', 2.2, ...
              'DisplayName', 'T_1');
 
-        % Metriche inline (angolo in basso a destra)
+        % Metriche compatte — text box in alto a destra dentro il grafico
         rmse_ss = sqrt(mean(err_ss.^2));
         pct_ss  = 100 * mean(abs(err_ss) < 2);
-        text(ax_top, t_ss(end)*0.97, y_lo_g + 0.8, ...
-             sprintf('RMSE=%.1f°C\n%d%% in ±2°C', rmse_ss, round(pct_ss)), ...
-             'HorizontalAlignment', 'right', 'FontSize', 7.5, 'Color', [0.15 0.15 0.15], ...
-             'BackgroundColor', 'w', 'EdgeColor', [0.75 0.75 0.75]);
+        text(ax_top, t_ss(end)*0.97, y_hi_g - 1.0, ...
+             sprintf('RMSE=%.1f°C | %d%%', rmse_ss, round(pct_ss)), ...
+             'HorizontalAlignment', 'right', 'FontSize', 6.5, ...
+             'Color', [0.15 0.15 0.15], ...
+             'BackgroundColor', 'w', 'EdgeColor', [0.75 0.75 0.75], ...
+             'Margin', 2);
 
-        title(ax_top, sprintf('T_{amb} = %.0f°C', Tamb_ss), ...
-              'FontSize', 10, 'FontWeight', 'bold', 'Color', 'k');
         ylim(ax_top, [y_lo_g, y_hi_g]);
 
-        % xlabel solo sull'ultimo, ylabel solo sul primo
-        if ss == nSeg
-            xlabel(ax_top, 'Tempo [min]', 'FontSize', 9, 'Color', 'k');
-        else
-            set(ax_top, 'XTickLabel', []);
-        end
+        % xlabel su TUTTI i pannelli con Tamb + tempo
+        xlabel(ax_top, sprintf('T_{amb}=%g°C — Tempo [min]', Tamb_ss), ...
+               'FontSize', 7.5, 'FontWeight', 'bold', 'Color', 'k');
+
+        % ylabel solo sul primo pannello
         if ss == 1
-            ylabel(ax_top, 'T_1 [°C]', 'FontSize', 9, 'Color', 'k');
-            legend(ax_top, 'Location', 'southeast', 'FontSize', 7.5);
+            ylabel(ax_top, 'T_1 [°C]', 'FontSize', 8, 'Color', 'k');
+            legend(ax_top, 'Location', 'southeast', 'FontSize', 6.5);
         else
             set(ax_top, 'YTickLabel', []);
         end
 
         grid(ax_top, 'on');
         set(ax_top, 'XColor', 'k', 'YColor', 'k', ...
-                    'GridColor', [0.15 0.15 0.15], 'GridAlpha', 0.25);
+                    'GridColor', [0.15 0.15 0.15], 'GridAlpha', 0.25, ...
+                    'FontSize', 7);
         box(ax_top, 'on');
     end
 end
@@ -326,7 +321,7 @@ Tamb_str = strjoin(arrayfun(@(x) sprintf('%.0f',x), Tamb_segments, ...
 sgtitle(sprintf(['Caso 2 — T_{set} = %.0f°C  |  T_{amb} = [%s]°C  |  ' ...
                  'dt = %ds  |  Q2 \\in [%.0f, %.0f]%%'], ...
         Tset_val, Tamb_str, dt, Q2_min, Q2_max), ...
-        'FontWeight','bold','FontSize',13,'Color','k');
+        'FontWeight','bold','FontSize',12,'Color','k');
 
 drawnow;
 end
