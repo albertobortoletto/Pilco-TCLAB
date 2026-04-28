@@ -46,6 +46,11 @@ for jj = 1:J
     fprintf('  Rollout iniziale %2d/%d — Costo: %.4f\n', jj, J, sum(realCost{jj}));
 end
 
+% IMPORTANTE: salva una copia dei rollout casuali PRIMA che applyController
+% sovrascriva latent{1..N}. applyController salva in latent{j} (j=1..N),
+% sovrascrivendo i primi N casuali.
+latent_random = latent(1:J);   % copia dei J rollout casuali
+
 
 %% =========================================================================
 %% FASE 2: Loop principale PILCO
@@ -70,8 +75,7 @@ for j = 1:N
 
     % --- 2c. Applicazione policy sul sistema ---
     % Esegue UN episodio reale con la policy ottimizzata al passo precedente.
-    % applyController è uno script PILCO che chiama rollout(mu0Sim,S0Sim,...)
-    % e aggiorna x, y, realCost{j+J}, latent{j+J} nel workspace.
+    % NOTA: applyController salva in latent{j} e realCost{j+J}.
     applyController;
 
     % Raccoglie Q1 dal rollout appena eseguito.
@@ -83,12 +87,18 @@ for j = 1:N
     fprintf('  Costo reale: %.4f\n', sum(realCost{j+J}));
 end
 
+% Raccogli i rollout PILCO da latent{1..N} (dove applyController li ha messi)
+latent_pilco = latent(1:N);
+
 
 %% =========================================================================
 %% Training plot
 %% =========================================================================
 
-draw_case1_training(latent, realCost, actions, J, N, dt, cost.target(1), ...
+% Costruisci latent_all = [casuali(1..J), pilco(1..N)] con indici corretti
+latent_all = [latent_random(:)', latent_pilco(:)'];
+
+draw_case1_training(latent_all, realCost, actions, J, N, dt, cost.target(1), ...
                     cost.target(1));
 % Salva la figura training
 fh_tr = findobj('Type','figure','Name','Caso 1 — Training');
