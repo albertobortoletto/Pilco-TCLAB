@@ -70,9 +70,10 @@ Pilco-TCLAB/
 │   └── gSat.m            # saturazione del segnale di controllo
 ├── loss/          # Funzione di costo
 │   └── lossSat.m         # costo saturante in [0,1]
-├── pilco_case1/   # Caso 1 — setpoint fisso
-├── pilco_case2/   # Caso 2 — robustezza alla temperatura ambiente
-└── pilco_case3/   # Caso 3 — inseguimento di setpoint variabile
+├── pilco_case1/         # Caso 1 — setpoint fisso
+├── pilco_case2/         # Caso 2 — robustezza alla temperatura ambiente
+├── pilco_case3/         # Caso 3 — inseguimento di setpoint variabile
+└── pilco_vs_isteresi/   # Confronto PILCO vs controllore a isteresi
 ```
 
 Ogni caso di studio è definito da tre elementi:
@@ -80,6 +81,8 @@ Ogni caso di studio è definito da tre elementi:
 - un file **settings** — configurazione completa di stato, politica, costo e GP;
 - un file **dynamics** — equazioni ODE del sistema;
 - uno script **learn / eval** — loop di training e valutazione.
+
+La cartella `pilco_vs_isteresi/` contiene invece il **confronto con un controllore di riferimento a isteresi**: l'implementazione del controllore on/off (banda ±δ) e lo script che esegue entrambi i controllori sullo stesso scenario — a parità di disturbo, rumore e funzione di costo — calcolando le metriche di confronto (RMSE, percentuale di tempo entro ±2 °C, costo medio).
 
 Questa organizzazione riflette una proprietà chiave del framework: **estendere il controllore a scenari più complessi aggiungendo variabili allo stato, senza modificare il nucleo dell'algoritmo**.
 
@@ -131,6 +134,10 @@ learn_case1           % avvia il loop di training PILCO
 
 % 3. Valutare la politica appresa
 eval_case1
+
+% 4. Eseguire il confronto PILCO vs isteresi
+cd ../pilco_vs_isteresi
+run_confronto        % esegue entrambi i controllori e calcola le metriche
 ```
 
 > **Nota:** adattare i nomi degli script (`settings_*`, `learn_*`, `eval_*`) a quelli effettivi presenti nelle cartelle `pilco_case{1,2,3}/`.
@@ -145,7 +152,8 @@ eval_case1
 
 ## Licenza
 
-Questo lavoro deriva dalla [pilco-matlab toolbox](https://github.com/UCL-SML/pilco-matlab): consultare e rispettarne i termini di licenza per le parti di codice riutilizzate. *(Specificare qui la licenza scelta per il proprio codice — es. MIT — assicurandosi della compatibilità con quella originale.)*
+Questo lavoro deriva dalla [pilco-matlab toolbox](https://github.com/UCL-SML/pilco-matlab): consultare e rispettarne i termini di licenza per le parti di codice riutilizzate. 
+*LICENZA MIT*
 
 ---
 
