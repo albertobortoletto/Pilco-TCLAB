@@ -221,18 +221,24 @@ fprintf('\n=== Generazione figura di confronto ===\n');
 c_pilco = [0.00, 0.45, 0.74];   % blu
 c_hyst  = [0.85, 0.33, 0.10];   % arancione
 c_ref   = [0.85, 0.13, 0.13];   % rosso
-c_band  = [0.80, 0.80, 0.80];   % grigio chiaro
+c_band  = [0.80, 0.90, 0.80];   % verde chiaro (banda ±2°C)
 c_xline = [0.50, 0.50, 0.50];   % grigio
 
 t_min = t_eval / 60;                           % [min]
+
+% Metriche per annotazione nel grafico
+rmse_P_val = sqrt(mean(err_pilco(2:end).^2));
+rmse_H_val = sqrt(mean(err_hyst(2:end).^2));
+pct_P_val  = 100 * mean(abs(err_pilco(2:end)) < 2);
+pct_H_val  = 100 * mean(abs(err_hyst(2:end)) < 2);
 
 % R8: NumberTitle off, Name descrittivo
 fig = figure('NumberTitle', 'off', 'Name', 'Confronto PILCO vs Isteresi — Caso 3', ...
              'Color', 'w');
 clf(fig);
-% R10: Position
-set(fig, 'Position', [80, 50, 1100, 850]);
-set(fig, 'InvertHardcopy', 'off');  % non invertire: i colori sono già espliciti
+% R10: Position — più alta per 4 subplot leggibili
+set(fig, 'Position', [60, 20, 1200, 1050]);
+set(fig, 'InvertHardcopy', 'off');
 
 % ---- SP1: Temperatura T1 [°C] ----
 ax1 = subplot(4, 1, 1); hold on;
@@ -246,16 +252,16 @@ patch(ax1, t_patch, band_patch, c_band, ...
       'DisplayName', '±2°C');
 
 % Riferimento
-plot(ax1, t_min, ref_vec, '-', 'Color', c_ref, 'LineWidth', 1.2, ...
+stairs(ax1, t_min, ref_vec, '-', 'Color', c_ref, 'LineWidth', 1.5, ...
      'DisplayName', 'Riferimento');
 
 % T1 PILCO
 plot(ax1, t_min, T1_pilco, '-', 'Color', c_pilco, 'LineWidth', 2.5, ...
-     'DisplayName', 'PILCO');
+     'DisplayName', sprintf('PILCO (RMSE=%.2f°C, %d%%)', rmse_P_val, round(pct_P_val)));
 
 % T1 Isteresi
 plot(ax1, t_min, T1_hyst, '--', 'Color', c_hyst, 'LineWidth', 2.0, ...
-     'DisplayName', 'Isteresi');
+     'DisplayName', sprintf('Isteresi (RMSE=%.2f°C, %d%%)', rmse_H_val, round(pct_H_val)));
 
 % R4: xline ai cambi di setpoint
 for ss = 2:nSteps
@@ -263,11 +269,12 @@ for ss = 2:nSteps
           'LineWidth', 1.3, 'HandleVisibility', 'off');
 end
 
-ylabel(ax1, 'T1 [°C]');
-legend(ax1, 'Location', 'best', 'FontSize', 8);
+ylabel(ax1, 'T_1 [°C]', 'FontSize', 11, 'FontWeight', 'bold');
+legend(ax1, 'Location', 'best', 'FontSize', 9);
 grid(ax1, 'on');
-title(ax1, 'Temperatura T1 nel tempo');
-xlabel(ax1, 'Tempo [min]');
+title(ax1, 'Temperatura T_1 nel tempo', ...
+      'FontSize', 13, 'FontWeight', 'bold', 'Color', 'k');
+xlabel(ax1, 'Tempo [min]', 'FontSize', 10);
 
 % ---- SP2: Q1 controllo [%] ----
 ax2 = subplot(4, 1, 2); hold on;
@@ -277,7 +284,7 @@ stairs(ax2, t_min(1:H_eval), Q1_perc_pilco, '-', 'Color', c_pilco, ...
        'LineWidth', 2.0, 'DisplayName', 'PILCO');
 
 % Q1 Isteresi
-stairs(ax2, t_min(1:H_eval), Q1_perc_hyst, '--', 'Color', c_hyst, ...
+stairs(ax2, t_min(1:H_eval), Q1_perc_hyst, '-', 'Color', c_hyst, ...
        'LineWidth', 1.8, 'DisplayName', 'Isteresi');
 
 % yline 0% e 100%
@@ -292,12 +299,13 @@ for ss = 2:nSteps
           'LineWidth', 1.3, 'HandleVisibility', 'off');
 end
 
-ylabel(ax2, 'Q1 [%]');
+ylabel(ax2, 'Q_1 [%]', 'FontSize', 11, 'FontWeight', 'bold');
 ylim(ax2, [-5, 110]);
-legend(ax2, 'Location', 'best', 'FontSize', 8);
+legend(ax2, 'Location', 'best', 'FontSize', 9);
 grid(ax2, 'on');
-title(ax2, 'Azione di controllo Q1');
-xlabel(ax2, 'Tempo [min]');
+title(ax2, 'Azione di controllo Q_1', ...
+      'FontSize', 13, 'FontWeight', 'bold', 'Color', 'k');
+xlabel(ax2, 'Tempo [min]', 'FontSize', 10);
 
 % ---- SP3: Errore di tracking e(t) [°C] ----
 ax3 = subplot(4, 1, 3); hold on;
@@ -307,14 +315,14 @@ plot(ax3, t_min, err_pilco, '-', 'Color', c_pilco, 'LineWidth', 2.0, ...
      'DisplayName', 'PILCO');
 
 % e Isteresi
-plot(ax3, t_min, err_hyst, '--', 'Color', c_hyst, 'LineWidth', 1.8, ...
+plot(ax3, t_min, err_hyst, '-', 'Color', c_hyst, 'LineWidth', 1.8, ...
      'DisplayName', 'Isteresi');
 
 % yline 0, ±2°C
 yline(ax3, 0,  '-k', 'LineWidth', 1.0, 'HandleVisibility', 'off');
-yline(ax3, 2,  '--', 'Color', [0.0, 0.6, 0.1], 'LineWidth', 1.0, ...
+yline(ax3, 2,  '--', 'Color', [0.0, 0.6, 0.1], 'LineWidth', 1.2, ...
       'DisplayName', '±2°C');
-yline(ax3, -2, '--', 'Color', [0.0, 0.6, 0.1], 'LineWidth', 1.0, ...
+yline(ax3, -2, '--', 'Color', [0.0, 0.6, 0.1], 'LineWidth', 1.2, ...
       'HandleVisibility', 'off');
 
 % xline ai cambi di setpoint
@@ -323,18 +331,19 @@ for ss = 2:nSteps
           'LineWidth', 1.3, 'HandleVisibility', 'off');
 end
 
-ylabel(ax3, 'Errore [°C]');
-legend(ax3, 'Location', 'best', 'FontSize', 8);
+ylabel(ax3, 'Errore [°C]', 'FontSize', 11, 'FontWeight', 'bold');
+legend(ax3, 'Location', 'best', 'FontSize', 9);
 grid(ax3, 'on');
-title(ax3, 'Errore di tracking e(t) = T1 − r(t)');
-xlabel(ax3, 'Tempo [min]');
+title(ax3, 'Errore di tracking  e(t) = T_1 − r(t)', ...
+      'FontSize', 13, 'FontWeight', 'bold', 'Color', 'k');
+xlabel(ax3, 'Tempo [min]', 'FontSize', 10);
 
 % ---- SP4: Costo lossSat cumulativo normalizzato [0,1] ----
 ax4 = subplot(4, 1, 4); hold on;
 
 % Costo PILCO con movmean
 plot(ax4, t_min(1:H_eval), cost_pilco, '-', ...
-     'Color', [c_pilco, 0.3], 'LineWidth', 0.8, ...
+     'Color', [c_pilco, 0.25], 'LineWidth', 0.8, ...
      'HandleVisibility', 'off');
 if H_eval >= 10
     plot(ax4, t_min(1:H_eval), movmean(cost_pilco, 10), '-', ...
@@ -343,11 +352,11 @@ if H_eval >= 10
 end
 
 % Costo Isteresi con movmean
-plot(ax4, t_min(1:H_eval), cost_hyst, '--', ...
-     'Color', [c_hyst, 0.3], 'LineWidth', 0.8, ...
+plot(ax4, t_min(1:H_eval), cost_hyst, '-', ...
+     'Color', [c_hyst, 0.25], 'LineWidth', 0.8, ...
      'HandleVisibility', 'off');
 if H_eval >= 10
-    plot(ax4, t_min(1:H_eval), movmean(cost_hyst, 10), '--', ...
+    plot(ax4, t_min(1:H_eval), movmean(cost_hyst, 10), '-', ...
          'Color', c_hyst, 'LineWidth', 2.2, ...
          'DisplayName', 'Isteresi movmean(10)');
 end
@@ -358,12 +367,13 @@ for ss = 2:nSteps
           'LineWidth', 1.3, 'HandleVisibility', 'off');
 end
 
-xlabel(ax4, 'Tempo [min]');
-ylabel(ax4, 'Costo lossSat [0,1]');
+xlabel(ax4, 'Tempo [min]', 'FontSize', 11, 'FontWeight', 'bold');
+ylabel(ax4, 'Costo lossSat [0,1]', 'FontSize', 11, 'FontWeight', 'bold');
 ylim(ax4, [0, 1.05]);
-legend(ax4, 'Location', 'best', 'FontSize', 8);
+legend(ax4, 'Location', 'best', 'FontSize', 9);
 grid(ax4, 'on');
-title(ax4, 'Costo lossSat (movmean 10)');
+title(ax4, 'Costo lossSat (media mobile 10)', ...
+      'FontSize', 13, 'FontWeight', 'bold', 'Color', 'k');
 
 % R1: linkaxes
 linkaxes([ax1, ax2, ax3, ax4], 'x');
@@ -373,25 +383,22 @@ set(ax1, 'XTickLabel', []);
 set(ax2, 'XTickLabel', []);
 set(ax3, 'XTickLabel', []);
 
-% R3: sgtitle
+% R3: sgtitle prominente
 Tset_str = strjoin(arrayfun(@(x) sprintf('%.0f', x), Tset_seq, ...
-           'UniformOutput', false), '→');
-sgtitle(sprintf('Confronto PILCO vs Isteresi — T_{set} = [%s]°C | T_{amb} = %.0f°C | dt = %ds', ...
-        Tset_str, Tamb, dt), ...
-        'FontWeight', 'bold', 'FontSize', 13);
+           'UniformOutput', false), ', ');
+sgtitle(sprintf('Confronto PILCO vs Isteresi — T_{set} = [%s] °C  |  T_{amb} = %.0f°C', ...
+        Tset_str, Tamb), ...
+        'FontWeight', 'bold', 'FontSize', 14, 'Color', 'k');
 
 % =========================================================================
 % Stile leggibile: sfondo bianco, contorno nero, titoli marcati
 % =========================================================================
 for aa = [ax1, ax2, ax3, ax4]
-    set(aa, 'Color', 'w');                          % sfondo bianco
-    set(aa, 'XColor', 'k');                          % asse X nero
-    set(aa, 'YColor', 'k');                          % asse Y nero
-    set(aa, 'GridColor', [0.15 0.15 0.15]);
-    set(aa, 'GridAlpha', 0.3);
-    set(get(aa, 'Title'), 'Color', 'k', 'FontWeight', 'bold', 'FontSize', 12);
-    set(get(aa, 'XLabel'), 'Color', 'k', 'FontSize', 10);
-    set(get(aa, 'YLabel'), 'Color', 'k', 'FontSize', 10);
+    set(aa, 'Color', 'w');
+    set(aa, 'XColor', 'k', 'YColor', 'k');
+    set(aa, 'GridColor', [0.15 0.15 0.15], 'GridAlpha', 0.3);
+    set(aa, 'FontSize', 9);
+    box(aa, 'on');
 end
 
 % Legende con sfondo bianco e testo nero
