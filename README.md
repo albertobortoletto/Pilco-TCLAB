@@ -1,160 +1,177 @@
-# PILCO-TCLab — Controllo termico data-efficient con Reinforcement Learning
+# PILCO-TCLab — Thermal control with model-based Reinforcement Learning
 
-Implementazione MATLAB dell'algoritmo **PILCO** (*Probabilistic Inference for Learning COntrol*) applicato al controllo di temperatura del dispositivo **TCLab** (*Temperature Control Lab*).
+**English** · [Italiano](README.it.md)
 
-Il progetto dimostra come un approccio di *reinforcement learning* **model-based** possa apprendere un controllore termico di precisione da **poche decine di episodi**, senza alcuna conoscenza a priori della fisica del sistema.
+MATLAB implementation of the **PILCO** algorithm (*Probabilistic Inference for Learning COntrol*) applied to temperature control of the **TCLab** (*Temperature Control Lab*) device.
 
-> Elaborato per la prova finale — Corso di Laurea in Ingegneria Informatica
-> Università degli Studi di Padova · Dipartimento di Ingegneria dell'Informazione
-> **Laureando:** Alberto Bortoletto · **Relatore:** Prof. Mirco Rampazzo
+The project shows how a **model-based** reinforcement learning approach can learn an accurate thermal controller from **a few dozen episodes**, with no prior knowledge of the system's physics.
 
----
-
-## Indice
-
-- [Motivazione](#motivazione)
-- [Cos'è PILCO](#cosè-pilco)
-- [Il sistema TCLab](#il-sistema-tclab)
-- [Struttura del repository](#struttura-del-repository)
-- [Casi di studio](#casi-di-studio)
-- [Risultati principali](#risultati-principali)
-- [Requisiti ed esecuzione](#requisiti-ed-esecuzione)
-- [Riferimenti](#riferimenti)
-- [Licenza](#licenza)
+> Final dissertation — B.Sc. in Computer Engineering
+> University of Padua · Department of Information Engineering
+> **Author:** Alberto Bortoletto · **Supervisor:** Prof. Mirco Rampazzo
 
 ---
 
-## Motivazione
+## Contents
 
-Gli algoritmi di reinforcement learning **model-free** (Q-learning, DDPG, …) richiedono migliaia o milioni di interazioni con il sistema reale per convergere, rendendoli impraticabili su hardware fisico che si usura o è lento da azionare. Sul TCLab, dove ogni episodio richiede ~10 minuti di tempo reale, un approccio model-free sarebbe inapplicabile.
+- [Motivation](#motivation)
+- [What PILCO is](#what-pilco-is)
+- [The TCLab system](#the-tclab-system)
+- [Repository layout](#repository-layout)
+- [Case studies](#case-studies)
+- [Key results](#key-results)
+- [Requirements and usage](#requirements-and-usage)
+- [Documentation](#documentation)
+- [References](#references)
+- [License](#license)
 
-PILCO affronta il problema apprendendo un **modello probabilistico della dinamica** (un Gaussian Process) e usandolo per pianificare la politica in simulazione, riducendo drasticamente il numero di interazioni reali necessarie (**sample efficiency**).
+---
 
-## Cos'è PILCO
+## Motivation
 
-PILCO (Deisenroth & Rasmussen, 2011) è un metodo di *policy search* model-based che:
+**Model-free** reinforcement learning algorithms (Q-learning, DDPG, …) need thousands or millions of interactions with the real system to converge, which makes them impractical on physical hardware that wears out or is slow to actuate. On the TCLab, where a single episode takes ~10 minutes of wall-clock time, a model-free approach would be unusable.
 
-1. **Apprende un modello GP** della dinamica del sistema da tutti i dati raccolti finora;
-2. **Ottimizza la politica** simulando internamente le traiettorie tramite *moment matching* (propagazione analitica dell'incertezza), senza toccare il sistema reale;
-3. **Esegue un solo rollout reale** per iterazione, aggiunge i nuovi dati e ripete.
+PILCO addresses this by learning a **probabilistic model of the dynamics** (a Gaussian Process) and using it to plan the policy in simulation, drastically cutting the number of real interactions required.
 
-L'incertezza del GP viene propagata esplicitamente nella pianificazione, permettendo di **ridurre il model bias** e di ottenere un **gradiente analitico** del costo atteso rispetto ai parametri della politica.
+## What PILCO is
 
-## Il sistema TCLab
+PILCO (Deisenroth & Rasmussen, 2011) is a model-based *policy search* method that:
 
-Il **TCLab** è uno shield per Arduino con due riscaldatori a transistor (Q₁, Q₂) e due termistori (T₁, T₂), con raffreddamento passivo. La sua dinamica è:
+1. **Learns a GP model** of the system dynamics from all data collected so far;
+2. **Optimises the policy** by simulating trajectories internally through *moment matching* (analytic uncertainty propagation), without touching the real system;
+3. **Runs a single real rollout** per iteration, adds the new data and repeats.
 
-- **nonlineare** (perdite convettive e radiative ∝ T⁴), quindi non adeguatamente descritta da un modello lineare per grandi escursioni di temperatura;
-- **lenta** (costanti di tempo ~20 s), quindi campionabile a bassa frequenza;
-- soggetta a **disturbi ambientali** (la temperatura ambiente varia durante gli esperimenti).
+GP uncertainty is propagated explicitly during planning, which **reduces model bias** and yields an **analytic gradient** of the expected cost with respect to the policy parameters.
 
-Queste caratteristiche lo rendono un banco di prova ideale per valutare la sample efficiency di PILCO. In questo lavoro il TCLab è modellato tramite un **simulatore ODE**.
+## The TCLab system
 
-## Struttura del repository
+The **TCLab** is an Arduino shield with two transistor heaters (Q₁, Q₂) and two thermistors (T₁, T₂), cooled passively. Its dynamics are:
 
-L'implementazione è basata sulla repository MATLAB ufficiale di Deisenroth e Rasmussen ([UCL-SML/pilco-matlab](https://github.com/UCL-SML/pilco-matlab)) ed è organizzata in moduli riutilizzabili e cartelle specifiche per ogni caso di studio:
+- **nonlinear** (convective and radiative losses ∝ T⁴), so a linear model does not describe large temperature excursions well;
+- **slow** (time constants ~20 s), so low sampling rates suffice;
+- subject to **ambient disturbances** (room temperature drifts during experiments).
+
+Together these make it an ideal testbed for PILCO. In this work the TCLab is modelled through an **ODE simulator**.
+
+## Repository layout
+
+The implementation builds on Deisenroth and Rasmussen's official MATLAB repository ([UCL-SML/pilco-matlab](https://github.com/UCL-SML/pilco-matlab)) and is organised into reusable modules plus one folder per case study:
 
 ```
 Pilco-TCLAB/
-├── base/          # Loop principale di PILCO
-│   ├── rollout.m         # esecuzione di un episodio
-│   ├── trainDynModel.m   # addestramento del modello GP
-│   ├── learnPolicy.m     # ottimizzazione della politica
-│   └── propagated.m      # propagazione dei momenti con derivate
-├── gp/            # Modelli Gaussian Process
-│   ├── gp1d.m            # predizione GP con derivate
-│   ├── train.m           # addestramento degli iperparametri
-│   └── fitc.m            # GP sparso (FITC)
-├── control/       # Politica di controllo
-│   ├── congp.m           # politica RBF (controller-as-GP)
-│   └── gSat.m            # saturazione del segnale di controllo
-├── loss/          # Funzione di costo
-│   └── lossSat.m         # costo saturante in [0,1]
-├── pilco_case1/         # Caso 1 — setpoint fisso
-├── pilco_case2/         # Caso 2 — robustezza alla temperatura ambiente
-├── pilco_case3/         # Caso 3 — inseguimento di setpoint variabile
-└── pilco_vs_isteresi/   # Confronto PILCO vs controllore a isteresi
+├── base/          # PILCO main loop
+│   ├── rollout.m         # run one episode
+│   ├── trainDynModel.m   # train the GP dynamics model
+│   ├── learnPolicy.m     # optimise the policy
+│   └── propagated.m      # moment propagation with derivatives
+├── gp/            # Gaussian Process models
+│   ├── gp1d.m            # GP prediction with derivatives
+│   ├── train.m           # hyperparameter training
+│   └── fitc.m            # sparse GP (FITC)
+├── control/       # Control policy
+│   └── congp.m           # RBF policy (controller-as-GP)
+├── loss/          # Cost function
+│   └── lossSat.m         # saturating cost in [0,1]
+├── util/          # Numerical utilities
+│   ├── minimize.m        # self-contained BFGS / L-BFGS / CG optimiser
+│   └── gSat.m            # control-signal saturation
+├── scenarios/           # Reference scenarios from the original toolbox
+│                        # (pendulum, cart-pole, unicycle, …)
+├── pilco_case1/         # Case 1 — fixed setpoint
+├── pilco_case2/         # Case 2 — ambient-temperature robustness
+├── pilco_case3/         # Case 3 — variable setpoint tracking
+├── pilco_vs_isteresi/   # PILCO vs hysteresis controller comparison
+└── docs/                # Thesis (PDF) and case-by-case guide
 ```
 
-Ogni caso di studio è definito da tre elementi:
+Each case study is defined by three pieces:
 
-- un file **settings** — configurazione completa di stato, politica, costo e GP;
-- un file **dynamics** — equazioni ODE del sistema;
-- uno script **learn / eval** — loop di training e valutazione.
+- a **settings** file — full configuration of state, policy, cost and GP;
+- a **dynamics** file — the system's ODE equations;
+- a **learn / eval** script — the training and evaluation loop.
 
-La cartella `pilco_vs_isteresi/` contiene invece il **confronto con un controllore di riferimento a isteresi**: l'implementazione del controllore on/off (banda ±δ) e lo script che esegue entrambi i controllori sullo stesso scenario — a parità di disturbo, rumore e funzione di costo — calcolando le metriche di confronto (RMSE, percentuale di tempo entro ±2 °C, costo medio).
+`pilco_vs_isteresi/` holds the **comparison against a reference hysteresis controller**: the on/off (±δ band) controller implementation and the script that runs both controllers on the same scenario — same disturbance, same noise, same cost function — computing the comparison metrics (RMSE, share of time within ±2 °C, mean cost).
 
-Questa organizzazione riflette una proprietà chiave del framework: **estendere il controllore a scenari più complessi aggiungendo variabili allo stato, senza modificare il nucleo dell'algoritmo**.
+This layout reflects a key property of the framework: **extending the controller to harder scenarios means adding variables to the state, not changing the core algorithm**.
 
-## Casi di studio
+## Case studies
 
-| Caso | Scenario | Stato | Sfida |
-|------|----------|-------|-------|
-| **1** | Setpoint fisso | `[T₁, T₂]` | Convergenza a un controllore stabile con interazioni minime |
-| **2** | Robustezza ambientale | `[T₁, T₂, Tamb]` | Adattarsi a temperature ambiente diverse |
-| **3** | Setpoint variabile | `[e, T₂, Tset, Q₂]` | Inseguire riferimenti diversi (salite/discese) con disturbo |
+| Case | Scenario | State | Challenge |
+|------|----------|-------|-----------|
+| **1** | Fixed setpoint | `[T₁, T₂]` | Converge to a stable controller with minimal interaction |
+| **2** | Ambient robustness | `[T₁, T₂, Tamb]` | Adapt to different ambient temperatures |
+| **3** | Variable setpoint | `[e, T₂, Tset, Q₂]` | Track different references (up and down) under disturbance |
 
-- **Caso 1 — Setpoint fisso.** Tset = 50 °C, Tamb = 25 °C, nessun disturbo. La politica mappa `[T₁, T₂] → Q₁`.
-- **Caso 2 — Robustezza alla temperatura ambiente.** Tamb variata tra episodi ({25, 35, 40, 30} °C) e inclusa nello stato. La politica apprende a modulare la potenza in funzione dell'ambiente — più potenza a freddo, meno a caldo — **senza conoscere la fisica del sistema**.
-- **Caso 3 — Inseguimento di setpoint variabile.** Formulazione basata sull'errore `e = T₁ − Tset`: una singola politica insegue setpoint diversi, incluse transizioni di salita e discesa, con il disturbo Q₂ catturato implicitamente dal GP.
+- **Case 1 — Fixed setpoint.** Tset = 50 °C, Tamb = 25 °C, no disturbance. The policy maps `[T₁, T₂] → Q₁`.
+- **Case 2 — Ambient-temperature robustness.** Tamb varies across episodes ({25, 35, 40, 30} °C) and is included in the state. The policy learns to modulate power as a function of the environment — more power when cold, less when warm — **without being told the system's physics**.
+- **Case 3 — Variable setpoint tracking.** An error-based formulation, `e = T₁ − Tset`: a single policy tracks different setpoints, including rising and falling transitions, with the Q₂ disturbance captured implicitly by the GP.
 
-## Risultati principali
+## Key results
 
-- **Sample efficiency:** in tutti i casi PILCO converge a una politica efficace in **20–40 episodi** totali (rollout casuali inclusi) — ordini di grandezza in meno rispetto agli approcci model-free.
-- **Caso 1:** controllore stabile in soli 5 rollout di training (+ 15 casuali iniziali), con errore a regime contenuto attorno a ±1 °C.
-- **Comportamento adattivo emergente:** nel Caso 2 la dipendenza della potenza dalla temperatura ambiente è appresa dai dati, non programmata.
-- **Confronto con controllore a isteresi** (stesso scenario, stesso disturbo):
+- **Number of episodes:** in every case PILCO converges to an effective policy within **20–40 total episodes**, initial random rollouts included.
+- **Case 1:** a stable controller after just 5 training rollouts (plus 15 initial random ones), with steady-state error around ±1 °C.
+- **Emergent adaptive behaviour:** in Case 2 the dependence of power on ambient temperature is learned from data, not programmed.
+- **Comparison against a hysteresis controller** (same scenario, same disturbance):
 
-  | Metrica | PILCO | Isteresi |
+  | Metric | PILCO | Hysteresis |
   |---|:---:|:---:|
-  | RMSE di tracking [°C] | **4,52** | 4,86 |
-  | Tempo entro ±2 °C | **80,0 %** | 48,8 % |
-  | Costo medio (lossSat) | **0,448** | 0,622 |
+  | Tracking RMSE [°C] | **4.52** | 4.86 |
+  | Time within ±2 °C | **80.0 %** | 48.8 % |
+  | Mean cost (lossSat) | **0.448** | 0.622 |
 
-  PILCO produce un controllo **modulato e continuo** (contro la commutazione on/off dell'isteresi), senza oscillazione permanente e con capacità di adattamento al contesto operativo.
+  PILCO produces **modulated, continuous** control (as opposed to the hysteresis controller's on/off switching), with no permanent oscillation and the ability to adapt to the operating context.
 
-## Requisiti ed esecuzione
+## Requirements and usage
 
-**Requisiti**
+**Requirements**
 
-- MATLAB *(testato su R____ — da specificare)*
-- Optimization Toolbox (per l'ottimizzatore CG / L-BFGS)
-- Il core della [pilco-matlab toolbox](https://github.com/UCL-SML/pilco-matlab) (incluso / da clonare — *specificare*)
+- **MATLAB** R2020b or later.
+- **No additional toolboxes.** Optimisation uses `util/minimize.m`, a self-contained BFGS / L-BFGS / CG implementation shipped with the repository — the Optimization Toolbox is not required.
+- The pilco-matlab core is **already included** in this repository (`base/`, `gp/`, `control/`, `loss/`, `util/`); there is nothing extra to clone.
 
-**Esecuzione**
+**Usage**
+
+Each case-study script adds the module folders to the MATLAB path on its own, using paths relative to its own folder, so run them from inside their directory.
 
 ```matlab
-% 1. Aggiungere i moduli al path
-addpath(genpath('.'));
-
-% 2. Eseguire uno dei casi di studio (es. Caso 1)
+% ── Case 1 — fixed setpoint (training and evaluation in one script) ──
 cd pilco_case1
-settings_case1        % carica la configurazione
-learn_case1           % avvia il loop di training PILCO
+case1_learn_eval        % → results/case1_policy_trained.mat, results/figures/
 
-% 3. Valutare la politica appresa
-eval_case1
+% ── Case 2 — ambient-temperature robustness ──
+cd pilco_case2
+case2_learn             % training → results/policy/case2_policy_trained.mat
+case2_eval              % evaluation on ambient temperatures never seen in training
 
-% 4. Eseguire il confronto PILCO vs isteresi
-cd ../pilco_vs_isteresi
-run_confronto        % esegue entrambi i controllori e calcola le metriche
+% ── Case 3 — variable setpoint tracking ──
+cd pilco_case3
+case3_learn             % training
+case3_eval              % evaluation on an unseen setpoint staircase
+
+% ── PILCO vs hysteresis comparison ──
+cd pilco_vs_isteresi
+compare_hysteresis_pilco   % runs both controllers and computes the metrics
 ```
 
-> **Nota:** adattare i nomi degli script (`settings_*`, `learn_*`, `eval_*`) a quelli effettivi presenti nelle cartelle `pilco_case{1,2,3}/`.
+Plots are regenerated by the `draw_*` scripts inside each case folder (`draw_case1.m`, `draw_case2.m`, `draw_case3_step.m` and their `*_training` counterparts).
 
-## Riferimenti
+## Documentation
+
+- [`docs/Tesi_PILCO_RL_Alberto_Bortoletto.pdf`](docs/Tesi_PILCO_RL_Alberto_Bortoletto.pdf) — the full dissertation (in Italian).
+- [`docs/Guida_Casi.md`](docs/Guida_Casi.md) — a detailed walkthrough of the three case studies (in Italian): design choices, parameters, what each case demonstrates, and PILCO's limits.
+
+## References
 
 1. M. P. Deisenroth, C. E. Rasmussen. *PILCO: A Model-Based and Data-Efficient Approach to Policy Search.* ICML, 2011.
 2. M. P. Deisenroth. *Efficient Reinforcement Learning using Gaussian Processes.* KIT Scientific Publishing, 2010.
 3. C. E. Rasmussen, C. K. I. Williams. *Gaussian Processes for Machine Learning.* MIT Press, 2006.
-4. UCL-SML. *pilco-matlab* — implementazione MATLAB di riferimento. https://github.com/UCL-SML/pilco-matlab
+4. UCL-SML. *pilco-matlab* — reference MATLAB implementation. https://github.com/UCL-SML/pilco-matlab
 5. APMonitor. *Temperature Control Lab (TCLab).* https://apmonitor.com/heat.htm
 
-## Licenza
+## License
 
-Questo lavoro deriva dalla [pilco-matlab toolbox](https://github.com/UCL-SML/pilco-matlab): consultare e rispettarne i termini di licenza per le parti di codice riutilizzate. 
-*LICENZA MIT*
+This work derives from the [pilco-matlab toolbox](https://github.com/UCL-SML/pilco-matlab): please refer to and respect its licence terms for the reused portions of the code.
 
 ---
 
-*Repository a corredo dell'elaborato di laurea triennale in Ingegneria Informatica — Università degli Studi di Padova, A.A. 2025/2026.*
+*Companion repository to the B.Sc. dissertation in Computer Engineering — University of Padua, academic year 2025/2026.*
